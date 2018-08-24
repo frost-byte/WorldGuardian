@@ -1,0 +1,76 @@
+# Guardian plugin configuration file
+
+# Default settings for a new NPC
+guardian defaults:
+    # Whether 'close quarters' NPCs should chase targets.
+    close chase target: true
+    # Whether 'ranged attack' NPCs should chase targets.
+    ranged chase target: false
+    # How much damage to do. -1 for calculated values.
+    damage: -1
+    # How much armor to have (percentage). -1 for calculated values.
+    armor: -1
+    # How much health to have.
+    health: 20
+    # Whether this NPC is invincible.
+    invincible: false
+    # Attack rate, in ticks.
+    attack rate: 30
+    # Heal rate, in ticks.
+    heal rate: 30
+    # Whether this NPC fights back.
+    fightback: true
+    # Whether this NPC needs ammo to fight with.
+    needs ammo: false
+    # Whether this NPC will avoid damaging non-targets.
+    safe shot: true
+    # Default respawn time, in ticks.
+    respawn time: 100
+    # Whether enemy mobs killed by this NPC should drop items.
+    enemy drops: false
+    # How long to target temporary enemies for, in ticks. 0 means never-forget.
+    enemy target time: 0
+    # What movement (chase) speed should be used, as a multiple of the default speed.
+    speed: 1.5
+    # Whether to automatically switch to the most appropriate available weapon. (Bow at range, or sword up close).
+    autoswitch: false
+    # Accuracy offset, 0 means perfectly accurate, 5 means pretty inaccurate.
+    accuracy: 0
+    # "Realistic" logic, don't attack targets we can't see, if enabled.
+    realistic: false
+    # How far the NPC can reach.
+    reach: 3
+    # The default World that the Guardian NPC to where the player will be teleported
+    destinationWorld: world
+    # The default World that the Guardian NPC will be spawn
+    sourceWorld: world
+
+random:
+    # What sound to play when the "spectral" attack is used.
+    spectral sound: ENTITY_VILLAGER_YES
+    # Whether to use 'workaround' mode of fist damage.
+    workaround damage: false
+    # Whether to enforce drops even when 'keepInventory' or similar are enabled.
+    workaround drops: false
+    # Whether to permit death messages to show for Guardian NPC deaths.
+    death messages: true
+    # How fast to try to shoot things (EG arrows).
+    shoot speed minimum: 20
+    # Whether to force damage through (particularly for ranged attacks).
+    enforce damage: false
+    # Whether NPCs are protected from damage by ignore targets.
+    protected: false
+    # Whether skull attack is allowed.
+    skull allowed: true
+    # How many calculation cycles before an NPC will give up on a good target.
+    clever ticks: 10
+    # The maximum health value for any given Guardian NPC.
+    max health: 2000
+    # Whether to ignore targets that are invisible.
+    ignore invisible targets: true
+
+# How fast to recalculate, in ticks.
+update rate: 10
+
+# Do not touch! (Unless you know what you're doing!)
+config version: 9

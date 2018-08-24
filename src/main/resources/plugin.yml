@@ -1,0 +1,98 @@
+name: WorldGuardian
+authors: ['frost-byte']
+version: ${project.version} (build ${BUILD_NUMBER})
+main: net.frost_byte.worldguardian.WorldGuardianPlugin
+depend: [Citizens]
+softdepend: [LuckPerms]
+
+api-version: 1.13
+
+commands:
+  guardian:
+    description: Lists guardian commands.
+    usage: /guardian help
+    permission: guardian.basic
+
+permissions:
+  guardian.*:
+    description: Gives access to guardian commands.
+    default: op
+    children:
+      # /guardian
+      guardian.basic: true
+      # /guardian addtarget TYPE
+      guardian.addtarget: true
+      # /guardian removetarget TYPE
+      guardian.removetarget: true
+      # /guardian addignore TYPE
+      guardian.addignore: true
+      # /guardian removeignore TYPE
+      guardian.removeignore: true
+      # /guardian range RANGE
+      guardian.range: true
+      # /guardian damage DAMAGE
+      guardian.damage: true
+      # /guardian health HEALTH
+      guardian.health: true
+      # /guardian armor ARMOR
+      guardian.armor: true
+      # /guardian attackrate RATE
+      guardian.attackrate: true
+      # /guardian healrate RATE
+      guardian.healrate: true
+      # /guardian respawntime TIME
+      guardian.chaserange: true
+      # /guardian chaserange RANGE
+      guardian.respawntime: true
+      # /guardian guard PLAYER
+      guardian.guard: true
+      # /guardian invincible
+      guardian.invincible: true
+      # /guardian fightback
+      guardian.fightback: true
+      # /guardian needammo
+      guardian.needammo: true
+      # /guardian safeshot
+      guardian.safeshot: true
+      # /guardian chaseclose, chaseranged
+      guardian.chase: true
+      # /guardian drops
+      guardian.drops: true
+      # /guardian spawnpoint
+      guardian.spawnpoint: true
+      # /guardian forgive
+      guardian.forgive: true
+      # /guardian enemydrops
+      guardian.enemydrops: true
+      # /guardian kill
+      guardian.kill: true
+      # /guardian respawn
+      guardian.respawn: true
+      # /guardian sentryimport
+      guardian.sentryimport: true
+      # /guardian targettime TIME
+      guardian.targettime: true
+      # /guardian speed SPEED
+      guardian.speed: true
+      # /guardian autoswitch
+      guardian.autoswitch: true
+      # /guardian accuracy
+      guardian.accuracy: true
+      # /guardian squad SQUAD
+      guardian.squad: true
+      # /guardian realistic
+      guardian.realistic: true
+      # /guardian debug
+      guardian.debug: true
+      # /guardian reach REACH
+      guardian.reach: true
+      # /guardian greeting GREETING, guardian warning WARNING, guardian greetrange RANGE
+      guardian.greet: true
+      # /guardian dialogue
+      guardian.dialogue: true
+      # /guardian info, /guardian targets, /guardian stats
+      guardian.info: true
+      # /guardian world
+      guardian.world: true
+      # Edit other people's NPCs
+      guardian.admin: true
