@@ -90,9 +90,11 @@ permissions:
       guardian.greet: true
       # /guardian dialogue
       guardian.dialogue: true
+      # /guardian farewell
+      guardian.farewell: true
       # /guardian info, /guardian targets, /guardian stats
       guardian.info: true
-      # /guardian world
-      guardian.world: true
+      # /guardian destination
+      guardian.destination: true
       # Edit other people's NPCs
       guardian.admin: true

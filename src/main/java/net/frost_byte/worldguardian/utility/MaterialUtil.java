@@ -1,18 +1,15 @@
 package net.frost_byte.worldguardian.utility;
 
 import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import net.frost_byte.worldguardian.WorldGuardianPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 @SuppressWarnings({ "WeakerAccess", "unused" })
-@Singleton
-public class MaterialUtil
+public final class MaterialUtil
 {
-	private final WorldGuardianPlugin plugin;
 	private static Set<Material> SWORD_MATERIALS = new HashSet<>();
 	private static Set<Material> PICKAXE_MATERIALS = new HashSet<>();
 	private static Set<Material> AXE_MATERIALS = new HashSet<>();
@@ -28,15 +25,20 @@ public class MaterialUtil
 	private static Map<Material, Double> ARMOR_PROTECTION_MULTIPLIERS = new HashMap<>();
 
 	private static Material MATERIAL_SNOW_BALL, MATERIAL_NETHER_STAR, MATERIAL_BLAZE_ROD;
+	private static Logger logger;
 
-	@Inject MaterialUtil(WorldGuardianPlugin plugin)
+	static
 	{
-		this.plugin = plugin;
+		logger = Bukkit.getLogger();
 		initWeapons();
 		initArmor();
 	}
 
-	public Material getMaterial(String name)
+	private MaterialUtil()
+	{
+	}
+
+	public static Material getMaterial(String name)
 	{
 		try
 		{
@@ -44,23 +46,23 @@ public class MaterialUtil
 		}
 		catch (IllegalArgumentException ex)
 		{
-			plugin.getLogger().warning("Guardian loader failed to handle material name '" + name
+			logger.warning("Guardian loader failed to handle material name '" + name
 					+ "', that material will not function (REPORT THIS ERROR!)");
 			return Material.valueOf("STICK");
 		}
 	}
 
-	private void addAllMaterials(Set<Material> set, String... matNames)
+	private static void addAllMaterials(Set<Material> set, String... matNames)
 	{
 		Arrays.stream(matNames).forEach(mat -> set.add(getMaterial(mat)));
 	}
 
-	private void allMaterialsTo(Map<Material, Double> map, Set<Material> set, Double val)
+	private static void allMaterialsTo(Map<Material, Double> map, Set<Material> set, Double val)
 	{
 		set.forEach(mat -> map.put(mat, val));
 	}
 
-	public Set<Material> getMaterials(String category)
+	public static Set<Material> getMaterials(String category)
 	{
 		category = Preconditions.checkNotNull(category, "The category cannot be null");
 
@@ -94,7 +96,7 @@ public class MaterialUtil
 	public static Material getBlazeRod() { return MATERIAL_BLAZE_ROD; }
 	public static Material getNetherStar() { return MATERIAL_NETHER_STAR; }
 
-	public double getWeaponDamageModifier(Material material)
+	public static double getWeaponDamageModifier(Material material)
 	{
 		material = Preconditions.checkNotNull(material, "The material cannot be null");
 		if (WEAPON_DAMAGE_MULTIPLIERS.containsKey(material))
@@ -104,13 +106,13 @@ public class MaterialUtil
 		return 1.0;
 	}
 
-	public boolean shouldTakeDura(Material material)
+	public static boolean shouldTakeDura(Material material)
 	{
 		return BOW_MATERIALS.contains(material) || SWORD_MATERIALS.contains(material) ||
 			PICKAXE_MATERIALS.contains(material) || AXE_MATERIALS.contains(material);
 	}
 
-	public double getArmorProtectionModifier(Material material)
+	public static double getArmorProtectionModifier(Material material)
 	{
 		material = Preconditions.checkNotNull(material, "The material cannot be null");
 		if (ARMOR_PROTECTION_MULTIPLIERS.containsKey(material))
@@ -120,29 +122,29 @@ public class MaterialUtil
 		return 0.4;
 	}
 
-	public boolean isWeapon(Material material)
+	public static boolean isWeapon(Material material)
 	{
 		return WEAPON_DAMAGE_MULTIPLIERS.containsKey(material);
 	}
 
-	public boolean isPotion(Material material)
+	public static boolean isPotion(Material material)
 	{
 		return POTION_MATERIALS.contains(material);
 	}
 
-	public boolean isBow(Material material)
+	public static boolean isBow(Material material)
 	{
 		return BOW_MATERIALS.contains(material);
 	}
 
-	public boolean isSkull(Material material)
+	public static boolean isSkull(Material material)
 	{
 		return SKULL_MATERIALS.contains(material);
 	}
 
-	private void initWeapons()
+	private static void initWeapons()
 	{
-		plugin.getLogger().info("MaterialUtil: Initializing Weapons");
+		logger.info("MaterialUtil: Initializing Weapons");
 		WEAPON_DAMAGE_MULTIPLIERS.put(getMaterial("DIAMOND_SWORD"), 7.0);
 		WEAPON_DAMAGE_MULTIPLIERS.put(getMaterial("IRON_SWORD"), 6.0);
 		WEAPON_DAMAGE_MULTIPLIERS.put(getMaterial("STONE_SWORD"), 5.0);
@@ -191,9 +193,9 @@ public class MaterialUtil
 
 	}
 
-	private void initArmor()
+	private static void initArmor()
 	{
-		plugin.getLogger().info("MaterialUtil: Initializing Armor");
+		logger.info("MaterialUtil: Initializing Armor");
 
 		addAllMaterials(
 			HELMET_MATERIALS,

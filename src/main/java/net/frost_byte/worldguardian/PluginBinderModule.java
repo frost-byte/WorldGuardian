@@ -4,12 +4,14 @@ import com.google.common.base.Preconditions;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
+import com.google.inject.Provides;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
 import co.aikar.commands.BukkitCommandManager;
+import com.google.inject.throwingproviders.ThrowingProviderBinder;
 import me.lucko.luckperms.api.LuckPermsApi;
-import org.bukkit.plugin.Plugin;
+import net.frost_byte.worldguardian.utility.GuardianTargetUtil;
 
 import java.io.File;
 import java.util.logging.Logger;
@@ -65,7 +67,7 @@ import java.util.logging.Logger;
 	{
 		this.plugin = Preconditions.checkNotNull(plugin,
 				"The plugin instance cannot be null");
-
+		GuardianTargetUtil.setPlugin(plugin);
 		this.commandManager = Preconditions.checkNotNull(commandManager,
 				"The ACF API cannot be null");
 
@@ -98,25 +100,41 @@ import java.util.logging.Logger;
 	@Override
 	protected void configure()
 	{
-		bind(Plugin.class).toInstance(plugin);
-		bind(WorldGuardianPlugin.class).toInstance(plugin);
+		bind(WorldGuardianPlugin.class)
+			.annotatedWith(Names.named("WorldGuardian"))
+			.toInstance(plugin);
+
 		bind(BukkitCommandManager.class).toInstance(commandManager);
 		bind(LuckPermsApi.class).toInstance(permsApi);
 
-		install(new FactoryModuleBuilder()
-				.build(GuardianTargetFactory.class));
+		install(ThrowingProviderBinder.forModule(this));
+/*		install(new FactoryModuleBuilder()
+			.implement(Target.class, GuardianTarget.class)
+			.build(GuardianTargetFactory.class));*/
 
 		bind(File.class)
-				.annotatedWith(Names.named("DataFolder"))
-				.toInstance(dataFolder);
+			.annotatedWith(Names.named("DataFolder"))
+			.toInstance(dataFolder);
 
 		bind(Logger.class)
-				.annotatedWith(Names.named("Logger"))
-				.toInstance(logger);
+			.annotatedWith(Names.named("Logger"))
+			.toInstance(logger);
 
 		bind(String.class)
-				.annotatedWith(Names.named("ServerFileName"))
-				.toInstance("server");
+			.annotatedWith(Names.named("ServerFileName"))
+			.toInstance("server");
+	}
 
+	//@CheckedProvides(GuardianTrait.TraitProvider.class)
+	@SuppressWarnings("unused")
+	@Provides
+	public GuardianTrait provideGuardianTrait(
+		@Named("WorldGuardian")
+		WorldGuardianPlugin plugin,
+		LuckPermsApi luckPermsApi)
+	{
+		GuardianTrait guardian = new GuardianTrait();
+		guardian.init(plugin, luckPermsApi);
+		return guardian;
 	}
 }

@@ -2,7 +2,7 @@ package net.frost_byte.worldguardian;
 
 import net.frost_byte.worldguardian.utility.GuardianTargetType;
 
-public interface GuardianTargetFactory<T extends GuardianTarget>
+public interface GuardianTargetFactory
 {
-	T createTarget(GuardianTargetType targetType);
+	Target createTarget(GuardianTargetType targetType);
 }

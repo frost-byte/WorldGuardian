@@ -37,11 +37,13 @@ public class GuardianUtilities
 		return (a + Math.sqrt(a2)) / gravity;
 	}
 
+	@SuppressWarnings("unused")
 	public static String concatWithSpaces(String[] strs, int start) {
-		String temp = "";
+		StringBuilder temp = new StringBuilder();
+
 		for (int i = start; i < strs.length; i++) {
-			temp += strs[i] + " ";
+			temp.append(strs[i]).append(" ");
 		}
-		return temp;
+		return temp.toString();
 	}
 }

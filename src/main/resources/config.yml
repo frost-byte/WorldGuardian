@@ -40,10 +40,6 @@ guardian defaults:
     realistic: false
     # How far the NPC can reach.
     reach: 3
-    # The default World that the Guardian NPC to where the player will be teleported
-    destinationWorld: world
-    # The default World that the Guardian NPC will be spawn
-    sourceWorld: world
 
 random:
     # What sound to play when the "spectral" attack is used.

@@ -1,6 +1,8 @@
 package net.frost_byte.worldguardian;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.google.inject.throwingproviders.CheckedProvider;
 import me.lucko.luckperms.api.LuckPermsApi;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.ai.EntityTarget;
@@ -48,28 +50,34 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.regex.Pattern;
 
-@SuppressWarnings({ "WeakerAccess", "deprecation", "unused" }) public class GuardianTrait extends Trait
+import static net.frost_byte.worldguardian.WorldGuardianPlugin.*;
+import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
+import static net.frost_byte.worldguardian.utility.MaterialUtil.*;
+
+@SuppressWarnings({ "WeakerAccess", "deprecation", "unused" })
+public class GuardianTrait extends Trait
 {
 	public static final double healthMin = 0.01;
 	public static final int attackRateMax = 2000;
 	public static final int healRateMax = 2000;
+
+	public interface TraitProvider<T> extends CheckedProvider<T>
+	{
+		T get();
+	}
+	@Inject
+	@Named("WorldGuardian")
 	private WorldGuardianPlugin plugin;
-	private LuckPermsApi luckPermsApi;
-	private GuardianTargetUtil targetUtil;
-	private MaterialUtil materialUtil;
 
 	@Inject
-	public GuardianTrait(
-		WorldGuardianPlugin plugin,
-		LuckPermsApi luckPermsApi,
-		GuardianTargetUtil targetUtil,
-		MaterialUtil materialUtil
-	){
-		super("guardian");
+	private LuckPermsApi luckPermsApi;
+
+	public GuardianTrait(){super("guardian");	}
+
+	public void init(WorldGuardianPlugin plugin, LuckPermsApi luckPermsApi)
+	{
 		this.plugin = plugin;
 		this.luckPermsApi = luckPermsApi;
-		this.targetUtil = targetUtil;
-		this.materialUtil = materialUtil;
 	}
 
 	@Persist("stats_ticksSpawned")
@@ -119,6 +127,9 @@ import java.util.regex.Pattern;
 
 	@Persist("dialogue")
 	public List<String> dialogue = new ArrayList<>();
+
+	@Persist("farewell")
+	public List<String> farewell = new ArrayList<>();
 
 	@Persist("playerNameTargets")
 	public List<String> playerNameTargets = new ArrayList<>();
@@ -324,13 +335,13 @@ import java.util.regex.Pattern;
 					{
 						((LivingEntity) event.getEntity()).damage(event.getFinalDamage());
 					}
-					if (WorldGuardianPlugin.debugMe)
+					if (debugMe)
 					{
 						plugin.getLogger().info("Guardian: enforce damage value to " + event.getFinalDamage());
 					}
 				}
 				else {
-					if (WorldGuardianPlugin.debugMe)
+					if (debugMe)
 					{
 						plugin.getLogger().info("Guardian: refuse damage enforcement");
 					}
@@ -351,12 +362,12 @@ import java.util.regex.Pattern;
 						if (!event.isCancelled()) {
 							((LivingEntity) event.getEntity()).damage(getDamage());
 						}
-						if (WorldGuardianPlugin.debugMe) {
+						if (debugMe) {
 							plugin.getLogger().info("Guardian: enforce damage value to " + getDamage());
 						}
 					}
 					else {
-						if (WorldGuardianPlugin.debugMe) {
+						if (debugMe) {
 							plugin.getLogger().info("Guardian: refuse damage enforcement");
 						}
 					}
@@ -371,7 +382,7 @@ import java.util.regex.Pattern;
 				for (EntityDamageEvent.DamageModifier mod : EntityDamageEvent.DamageModifier.values()) {
 					if (mod != EntityDamageEvent.DamageModifier.BASE && event.isApplicable(mod)) {
 						event.setDamage(mod, event.getDamage(mod) * rel);
-						if (WorldGuardianPlugin.debugMe) {
+						if (debugMe) {
 							plugin.getLogger().info("Guardian: Set damage for " + mod + " to " + event.getDamage(mod));
 						}
 					}
@@ -389,7 +400,7 @@ import java.util.regex.Pattern;
 			return;
 		}
 		boolean isMe = event.getEntity().getUniqueId().equals(getLivingEntity().getUniqueId());
-		if (sentinelProtected && isMe) {
+		if (guardianProtected && isMe) {
 			if (event.getDamager() instanceof LivingEntity && isIgnored((LivingEntity) event.getDamager())) {
 				event.setCancelled(true);
 				return;
@@ -474,7 +485,7 @@ import java.util.regex.Pattern;
 				&& CitizensAPI.getNPCRegistry().isNPC(event.getEntity())) {
 			isEventTarget = true;
 		}
-		else if (eventTargets.contains("pvsentinel")
+		else if (eventTargets.contains("pvguardian")
 				&& event.getEntity() instanceof LivingEntity
 				&& CitizensAPI.getNPCRegistry().isNPC(event.getEntity())
 				&& CitizensAPI.getNPCRegistry().getNPC(event.getEntity()).hasTrait(GuardianTrait.class)) {
@@ -492,42 +503,47 @@ import java.util.regex.Pattern;
 		currentTargets.remove(target);
 	}
 
-	private boolean sentinelProtected;
+	private boolean guardianProtected;
 
 	@Override
 	public void onAttach() {
+		plugin = (plugin == null) ? GuardianTargetUtil.getPlugin() : plugin;
+		if (plugin == null)
+		{
+			throw new NullPointerException("The plugin is null.");
+		}
 		FileConfiguration config = plugin.getConfig();
-		attackRate = config.getInt("sentinel defaults.attack rate", 30);
-		healRate = config.getInt("sentinel defaults.heal rate", 30);
-		respawnTime = config.getInt("sentinel defaults.respawn time", 100);
-		rangedChase = config.getBoolean("sentinel defaults.ranged chase target", false);
-		closeChase = config.getBoolean("sentinel defaults.close chase target", true);
-		armor = config.getDouble("sentinel defaults.armor", -1);
-		damage = config.getDouble("sentinel defaults.damage", -1);
-		health = config.getDouble("sentinel defaults.health", 20);
+		attackRate = config.getInt("guardian defaults.attack rate", 30);
+		healRate = config.getInt("guardian defaults.heal rate", 30);
+		respawnTime = config.getInt("guardian defaults.respawn time", 100);
+		rangedChase = config.getBoolean("guardian defaults.ranged chase target", false);
+		closeChase = config.getBoolean("guardian defaults.close chase target", true);
+		armor = config.getDouble("guardian defaults.armor", -1);
+		damage = config.getDouble("guardian defaults.damage", -1);
+		health = config.getDouble("guardian defaults.health", 20);
 		if (npc.isSpawned()) {
 			getLivingEntity().getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(health);
 			getLivingEntity().setHealth(health);
 		}
-		setInvincible(config.getBoolean("sentinel defaults.invincible", false));
-		fightback = config.getBoolean("sentinel defaults.fightback", true);
-		needsAmmo = config.getBoolean("sentinel defaults.needs ammo", false);
-		safeShot = config.getBoolean("sentinel defaults.safe shot", true);
-		enemyDrops = config.getBoolean("sentinel defaults.enemy drops", false);
-		enemyTargetTime = config.getInt("sentinel defaults.enemy target time", 0);
-		speed = config.getInt("sentinel defaults.speed", 1);
+		setInvincible(config.getBoolean("guardian defaults.invincible", false));
+		fightback = config.getBoolean("guardian defaults.fightback", true);
+		needsAmmo = config.getBoolean("guardian defaults.needs ammo", false);
+		safeShot = config.getBoolean("guardian defaults.safe shot", true);
+		enemyDrops = config.getBoolean("guardian defaults.enemy drops", false);
+		enemyTargetTime = config.getInt("guardian defaults.enemy target time", 0);
+		speed = config.getInt("guardian defaults.speed", 1);
 		if (speed <= 0) {
 			speed = 1;
 		}
-		autoswitch = config.getBoolean("sentinel defaults.autoswitch", false);
+		autoswitch = config.getBoolean("guardian defaults.autoswitch", false);
 		ignores.add(GuardianTargetType.OWNER.name());
-		sentinelProtected = config.getBoolean("random.protected", false);
+		guardianProtected = config.getBoolean("random.protected", false);
 		reach = config.getDouble("reach", 3);
 	}
 
 	public void useItem() {
 		if (npc.isSpawned() && getLivingEntity() instanceof Player) {
-			if (GuardianTargetUtil.v1_9) {
+			if (v1_9) {
 				PlayerAnimation.START_USE_MAINHAND_ITEM.play((Player) getLivingEntity());
 			}
 			BukkitRunnable runner = new BukkitRunnable() {
@@ -611,7 +627,7 @@ import java.util.regex.Pattern;
 		stats_potionsThrown++;
 		HashMap.SimpleEntry<Location, Vector> start = getLaunchDetail(target, lead);
 		Entity entityPotion;
-		if (GuardianTargetUtil.v1_9) {
+		if (v1_9) {
 			entityPotion = start.getKey().getWorld().spawnEntity(start.getKey(),
 					potion.getType() == Material.SPLASH_POTION ? EntityType.SPLASH_POTION : EntityType.LINGERING_POTION);
 		}
@@ -631,7 +647,7 @@ import java.util.regex.Pattern;
 		}
 		stats_arrowsFired++;
 		Entity arrow;
-		if (GuardianTargetUtil.v1_9) {
+		if (v1_9) {
 			arrow = start.getKey().getWorld().spawnEntity(start.getKey(),
 					type.getType() == Material.SPECTRAL_ARROW ? EntityType.SPECTRAL_ARROW :
 							(type.getType() == Material.TIPPED_ARROW ? EntityType.TIPPED_ARROW : EntityType.ARROW));
@@ -725,7 +741,7 @@ import java.util.regex.Pattern;
 			return damage;
 		}
 		ItemStack weapon;
-		if (GuardianTargetUtil.v1_9)
+		if (v1_9)
 		{
 			weapon = getLivingEntity().getEquipment().getItemInMainHand();
 		}
@@ -742,11 +758,11 @@ import java.util.regex.Pattern;
 		multiplier += weapon.getItemMeta() == null || !weapon.getItemMeta().hasEnchant(Enchantment.DAMAGE_ALL)
 				? 0 : weapon.getItemMeta().getEnchantLevel(Enchantment.DAMAGE_ALL) * 0.2;
 		Material weaponType = weapon.getType();
-		if (materialUtil.getMaterials("bows").contains(weaponType)) {
+		if (getMaterials("bows").contains(weaponType)) {
 			return 6 * (1 + (weapon.getItemMeta() == null || !weapon.getItemMeta().hasEnchant(Enchantment.ARROW_DAMAGE)
 					? 0 : weapon.getItemMeta().getEnchantLevel(Enchantment.ARROW_DAMAGE) * 0.3));
 		}
-		Double damageMult = materialUtil.getWeaponDamageModifier(weaponType);
+		Double damageMult = getWeaponDamageModifier(weaponType);
 
 		return multiplier * damageMult;
 	}
@@ -756,22 +772,22 @@ import java.util.regex.Pattern;
 			// TODO: Enchantments!
 			double baseArmor = 0;
 			ItemStack helmet = ent.getEquipment().getHelmet();
-			Double helmetAdder = helmet == null ? null : materialUtil.getArmorProtectionModifier(helmet.getType());
+			Double helmetAdder = helmet == null ? null : getArmorProtectionModifier(helmet.getType());
 			if (helmetAdder != null) {
 				baseArmor += helmetAdder;
 			}
 			ItemStack chestplate = ent.getEquipment().getChestplate();
-			Double chestplateAdder = chestplate == null ? null : materialUtil.getArmorProtectionModifier(chestplate.getType());
+			Double chestplateAdder = chestplate == null ? null : getArmorProtectionModifier(chestplate.getType());
 			if (chestplateAdder != null) {
 				baseArmor += chestplateAdder;
 			}
 			ItemStack leggings = ent.getEquipment().getLeggings();
-			Double leggingsAdder = leggings == null ? null : materialUtil.getArmorProtectionModifier(leggings.getType());
+			Double leggingsAdder = leggings == null ? null : getArmorProtectionModifier(leggings.getType());
 			if (leggingsAdder != null) {
 				baseArmor += leggingsAdder;
 			}
 			ItemStack boots = ent.getEquipment().getBoots();
-			Double bootsAdder = boots == null ? null : materialUtil.getArmorProtectionModifier(boots.getType());
+			Double bootsAdder = boots == null ? null : getArmorProtectionModifier(boots.getType());
 			if (bootsAdder != null) {
 				baseArmor += bootsAdder;
 			}
@@ -785,7 +801,7 @@ import java.util.regex.Pattern;
 		swingWeapon();
 		stats_punches++;
 		if (plugin.getConfig().getBoolean("random.workaround damage", false)) {
-			if (WorldGuardianPlugin.debugMe) {
+			if (debugMe) {
 				plugin.getLogger().info("Guardian: workaround damage value at " + getDamage() + " yields "
 						+ ((getDamage() * (1.0 - getArmor(entity)))));
 			}
@@ -800,7 +816,7 @@ import java.util.regex.Pattern;
 			}
 		}
 		else {
-			if (WorldGuardianPlugin.debugMe) {
+			if (debugMe) {
 				plugin.getLogger().info("Guardian: Punch/natural for " + getDamage());
 			}
 			entity.damage(getDamage(), getLivingEntity());
@@ -810,7 +826,7 @@ import java.util.regex.Pattern;
 	Location bunny_goal = new Location(null, 0, 0, 0);
 
 	public Entity getTargetFor(EntityTarget targ) {
-		if (GuardianTargetUtil.v1_9) {
+		if (v1_9) {
 			return targ.getTarget();
 		}
 		try {
@@ -861,7 +877,7 @@ import java.util.regex.Pattern;
 			if (item != null)
 			{
 				Material mat = item.getType();
-				if (GuardianTargetUtil.v1_9)
+				if (v1_9)
 				{
 					if (mat == Material.ARROW || mat == Material.TIPPED_ARROW || mat == Material.SPECTRAL_ARROW)
 					{
@@ -883,7 +899,7 @@ import java.util.regex.Pattern;
 	@SuppressWarnings("deprecation")
 	public void reduceDurability()
 	{
-		if (GuardianTargetUtil.v1_9)
+		if (v1_9)
 		{
 			ItemStack item = getLivingEntity().getEquipment().getItemInMainHand();
 			if (item != null && item.getType() != Material.AIR) {
@@ -920,7 +936,7 @@ import java.util.regex.Pattern;
 			ItemStack item = items[i];
 			if (item != null) {
 				Material mat = item.getType();
-				if (mat == Material.ARROW || (GuardianTargetUtil.v1_9 && (mat == Material.TIPPED_ARROW || mat == Material.SPECTRAL_ARROW))) {
+				if (mat == Material.ARROW || (v1_9 && (mat == Material.TIPPED_ARROW || mat == Material.SPECTRAL_ARROW))) {
 					if (item.getAmount() > 1) {
 						item.setAmount(item.getAmount() - 1);
 						items[i] = item;
@@ -947,7 +963,7 @@ import java.util.regex.Pattern;
 			ItemStack item = items[i];
 			if (item != null) {
 				Material mat = item.getType();
-				if (mat == MaterialUtil.getSnowBall()) {
+				if (mat == getSnowBall()) {
 					if (item.getAmount() > 1) {
 						item.setAmount(item.getAmount() - 1);
 						items[i] = item;
@@ -967,7 +983,7 @@ import java.util.regex.Pattern;
 	@SuppressWarnings("deprecation")
 	public void takeOne()
 	{
-		if (GuardianTargetUtil.v1_9)
+		if (v1_9)
 		{
 			ItemStack item = getLivingEntity().getEquipment().getItemInMainHand();
 			if (item != null && item.getType() != Material.AIR)
@@ -998,13 +1014,13 @@ import java.util.regex.Pattern;
 	}
 
 	public boolean isWeapon(Material mat) {
-		return materialUtil.isWeapon(mat)
-				|| materialUtil.isPotion(mat)
-				|| materialUtil.isBow(mat)
-				|| materialUtil.isSkull(mat)
-				|| mat == MaterialUtil.getSnowBall()
-				|| mat == MaterialUtil.getBlazeRod()
-				|| mat == MaterialUtil.getNetherStar();
+		return MaterialUtil.isWeapon(mat)
+				|| isPotion(mat)
+				|| isBow(mat)
+				|| isSkull(mat)
+				|| mat == getSnowBall()
+				|| mat == getBlazeRod()
+				|| mat == getNetherStar();
 	}
 
 	public void grabNextItem() {
@@ -1108,7 +1124,7 @@ import java.util.regex.Pattern;
 		// TODO: Simplify this code!
 		stats_attackAttempts++;
 		double dist = getLivingEntity().getEyeLocation().distanceSquared(entity.getEyeLocation());
-		if (WorldGuardianPlugin.debugMe) {
+		if (debugMe) {
 			plugin.getLogger().info("Guardian: tryAttack at range " + dist);
 		}
 		if (autoswitch && dist > reach * reach) {
@@ -1120,13 +1136,13 @@ import java.util.regex.Pattern;
 		GuardianAttackEvent sat = new GuardianAttackEvent(npc);
 		Bukkit.getPluginManager().callEvent(sat);
 		if (sat.isCancelled()) {
-			if (WorldGuardianPlugin.debugMe) {
+			if (debugMe) {
 				plugin.getLogger().info("Guardian: tryAttack refused, event cancellation");
 			}
 			return;
 		}
 		addTarget(entity.getUniqueId());
-		for (GuardianIntegration gi : WorldGuardianPlugin.integrations) {
+		for (GuardianIntegration gi : integrations) {
 			if (gi.tryAttack(this, entity)) {
 				return;
 			}
@@ -1185,7 +1201,7 @@ import java.util.regex.Pattern;
 					return;
 				}
 				timeSinceAttack = 0;
-				if (GuardianTargetUtil.v1_9) {
+				if (v1_9) {
 					firePotion(getLivingEntity().getEquipment().getItemInMainHand(),
 							entity.getEyeLocation(), entity.getVelocity());
 				}
@@ -1290,7 +1306,7 @@ import java.util.regex.Pattern;
 				timeSinceAttack = 0;
 				swingWeapon();
 				entity.getWorld().strikeLightningEffect(entity.getLocation());
-				if (WorldGuardianPlugin.debugMe) {
+				if (debugMe) {
 					plugin.getLogger().info("Guardian: Lightning hits for " + getDamage());
 				}
 				entity.damage(getDamage());
@@ -1335,7 +1351,7 @@ import java.util.regex.Pattern;
 		else {
 			if (dist < reach * reach) {
 				if (timeSinceAttack < attackRate) {
-					if (WorldGuardianPlugin.debugMe) {
+					if (debugMe) {
 						plugin.getLogger().info("Guardian: tryAttack refused, timeSinceAttack");
 					}
 					if (closeChase) {
@@ -1345,7 +1361,7 @@ import java.util.regex.Pattern;
 				}
 				timeSinceAttack = 0;
 				// TODO: Damage sword if needed!
-				if (WorldGuardianPlugin.debugMe) {
+				if (debugMe) {
 					plugin.getLogger().info("Guardian: tryAttack passed!");
 				}
 				punch(entity);
@@ -1355,7 +1371,7 @@ import java.util.regex.Pattern;
 				}
 			}
 			else if (closeChase) {
-				if (WorldGuardianPlugin.debugMe) {
+				if (debugMe) {
 					plugin.getLogger().info("Guardian: tryAttack refused, range");
 				}
 				chase(entity);
@@ -1432,7 +1448,7 @@ import java.util.regex.Pattern;
 			return false;
 		}
 		ItemStack it = npc.getTrait(Inventory.class).getContents()[0];
-		return it != null && it.getType() == MaterialUtil.getBlazeRod();
+		return it != null && it.getType() == getBlazeRod();
 	}
 
 	public boolean usesSnowball() {
@@ -1440,7 +1456,7 @@ import java.util.regex.Pattern;
 			return false;
 		}
 		ItemStack it = npc.getTrait(Inventory.class).getContents()[0];
-		return it != null && it.getType() == MaterialUtil.getSnowBall();
+		return it != null && it.getType() == getSnowBall();
 	}
 
 	public boolean usesLightning() {
@@ -1448,7 +1464,7 @@ import java.util.regex.Pattern;
 			return false;
 		}
 		ItemStack it = npc.getTrait(Inventory.class).getContents()[0];
-		return it != null && it.getType() == MaterialUtil.getNetherStar();
+		return it != null && it.getType() == getNetherStar();
 	}
 
 	public boolean usesEgg() {
@@ -1475,14 +1491,14 @@ import java.util.regex.Pattern;
 			return false;
 		}
 		ItemStack it = npc.getTrait(Inventory.class).getContents()[0];
-		return it != null && materialUtil.isSkull(it.getType());
+		return it != null && isSkull(it.getType());
 	}
 
 	public boolean usesSpectral() {
 		if (!npc.hasTrait(Inventory.class)) {
 			return false;
 		}
-		if (!GuardianTargetUtil.v1_10) {
+		if (!v1_10) {
 			return false;
 		}
 		ItemStack it = npc.getTrait(Inventory.class).getContents()[0];
@@ -1497,7 +1513,7 @@ import java.util.regex.Pattern;
 		if (it == null) {
 			return false;
 		}
-		if (!GuardianTargetUtil.v1_9) {
+		if (!v1_9) {
 			return it.getType() == Material.POTION;
 		}
 		return it.getType() == Material.SPLASH_POTION || it.getType() == Material.LINGERING_POTION;
@@ -1505,14 +1521,14 @@ import java.util.regex.Pattern;
 
 	public boolean shouldTakeDura() {
 		Material type;
-		if (GuardianTargetUtil.v1_9) {
+		if (v1_9) {
 			type = getLivingEntity().getEquipment().getItemInMainHand().getType();
 		}
 		else {
 			//noinspection deprecation
 			type = getLivingEntity().getEquipment().getItemInHand().getType();
 		}
-		return materialUtil.shouldTakeDura(type);
+		return MaterialUtil.shouldTakeDura(type);
 	}
 
 	public boolean shouldTarget(LivingEntity entity)
@@ -1536,9 +1552,9 @@ import java.util.regex.Pattern;
 		if (squad != null) {
 			for (NPC npc : CitizensAPI.getNPCRegistry()) {
 				if (npc.hasTrait(GuardianTrait.class)) {
-					GuardianTrait sentinel = npc.getTrait(GuardianTrait.class);
-					if (sentinel.squad != null && sentinel.squad.equals(squad)) {
-						sentinel.addTargetNoBounce(id);
+					GuardianTrait guardian = npc.getTrait(GuardianTrait.class);
+					if (guardian.squad != null && guardian.squad.equals(squad)) {
+						guardian.addTargetNoBounce(id);
 					}
 				}
 			}
@@ -1592,7 +1608,7 @@ import java.util.regex.Pattern;
 		if (getGuarding() != null && entity.getUniqueId().equals(getGuarding())) {
 			return true;
 		}
-		if (GuardianTargetUtil.v1_9) {
+		if (v1_9) {
 			if (entity.getEquipment() != null && entity.getEquipment().getItemInMainHand() != null
 					&& isRegexTargeted(entity.getEquipment().getItemInMainHand().getType().name(), heldItemIgnores)) {
 				return true;
@@ -1605,7 +1621,8 @@ import java.util.regex.Pattern;
 				return true;
 			}
 		}
-		for (GuardianIntegration integration : WorldGuardianPlugin.integrations) {
+
+		for (GuardianIntegration integration : integrations) {
 			for (String text : otherIgnores) {
 				if (integration.isTarget(entity, text)) {
 					return true;
@@ -1642,9 +1659,12 @@ import java.util.regex.Pattern;
 			entity.getUniqueId().equals(npc.getTrait(Owner.class).getOwnerId())) {
 			return true;
 		}
-		HashSet<GuardianTarget> possible = targetUtil.findTargetByEntityType(entity.getType());
+		HashSet<GuardianTarget> possible = findTargetByEntityType(entity.getType());
+
+		if (possible == null) return false;
+
 		for (GuardianTarget poss : possible) {
-			if (ignores.contains(poss.name())) {
+			if (ignores.contains(poss.getName())) {
 				return true;
 			}
 		}
@@ -1666,7 +1686,7 @@ import java.util.regex.Pattern;
 		if (currentTargets.contains(target)) {
 			return true;
 		}
-		if (GuardianTargetUtil.v1_9) {
+		if (v1_9) {
 			if (entity.getEquipment() != null && entity.getEquipment().getItemInMainHand() != null
 					&& isRegexTargeted(entity.getEquipment().getItemInMainHand().getType().name(), heldItemTargets)) {
 				return true;
@@ -1678,7 +1698,7 @@ import java.util.regex.Pattern;
 				return true;
 			}
 		}
-		for (GuardianIntegration integration : WorldGuardianPlugin.integrations) {
+		for (GuardianIntegration integration : integrations) {
 			for (String text : otherTargets) {
 				if (integration.isTarget(entity, text)) {
 					return true;
@@ -1710,9 +1730,11 @@ import java.util.regex.Pattern;
 		if (targets.contains(GuardianTargetType.OWNER.name()) && entity.getUniqueId().equals(npc.getTrait(Owner.class).getOwnerId())) {
 			return true;
 		}
-		HashSet<GuardianTarget> possible = targetUtil.findTargetByEntityType(entity.getType());
+		HashSet<GuardianTarget> possible = findTargetByEntityType(entity.getType());
+
+		if (possible == null) return false;
 		for (GuardianTarget poss : possible) {
-			if (targets.contains(poss.name())) {
+			if (targets.contains(poss.getName())) {
 				return true;
 			}
 		}
@@ -1765,7 +1787,7 @@ import java.util.regex.Pattern;
 	public long timeSinceHeal = 0;
 
 	private Entity getEntityForID(UUID id) {
-		if (!GuardianTargetUtil.v1_12) {
+		if (!v1_12) {
 			for (Entity e : getLivingEntity().getWorld().getEntities()) {
 				if (e.getUniqueId().equals(id)) {
 					return e;
@@ -1820,19 +1842,19 @@ import java.util.regex.Pattern;
 	public boolean chased = false;
 
 	public void specialMarkVision() {
-		if (WorldGuardianPlugin.debugMe) {
+		if (debugMe) {
 			plugin.getLogger().info("Guardian: Target! I see you, " + (chasing == null ? "(Unknown)" : chasing.getName()));
 		}
-		if (GuardianTargetUtil.v1_11 && getLivingEntity().getType() == EntityType.SHULKER) {
+		if (v1_11 && getLivingEntity().getType() == EntityType.SHULKER) {
 			NMS.setPeekShulker(getLivingEntity(), 100);
 		}
 	}
 
 	public void specialUnmarkVision() {
-		if (WorldGuardianPlugin.debugMe) {
+		if (debugMe) {
 			plugin.getLogger().info("Guardian: Goodbye, visible target " + (chasing == null ? "(Unknown)" : chasing.getName()));
 		}
-		if (GuardianTargetUtil.v1_11 && getLivingEntity().getType() == EntityType.SHULKER) {
+		if (v1_11 && getLivingEntity().getType() == EntityType.SHULKER) {
 			NMS.setPeekShulker(getLivingEntity(), 0);
 		}
 	}
@@ -1842,7 +1864,7 @@ import java.util.regex.Pattern;
 		timeSinceAttack += plugin.tickRate;
 		timeSinceHeal += plugin.tickRate;
 		if (getLivingEntity().getLocation().getY() <= 0) {
-			if (WorldGuardianPlugin.debugMe) {
+			if (debugMe) {
 				plugin.getLogger().info("Guardian: Injuring self, I'm below the map!");
 			}
 			getLivingEntity().damage(1);
@@ -1876,11 +1898,11 @@ import java.util.regex.Pattern;
 		LivingEntity target = findBestTarget();
 		if (target != null) {
 			Location near = nearestPathPoint();
-			if (WorldGuardianPlugin.debugMe) {
+			if (debugMe) {
 				plugin.getLogger().info("Guardian: target selected to be " + target.getName());
 			}
 			if (crsq <= 0 || near == null || near.distanceSquared(target.getLocation()) <= crsq) {
-				if (WorldGuardianPlugin.debugMe) {
+				if (debugMe) {
 					plugin.getLogger().info("Guardian: Attack target within range of safe zone: "
 							+ (near == null ? "Any" : near.distanceSquared(target.getLocation())));
 				}
@@ -1893,7 +1915,7 @@ import java.util.regex.Pattern;
 				goHome = false;
 			}
 			else {
-				if (WorldGuardianPlugin.debugMe) {
+				if (debugMe) {
 					plugin.getLogger().info("Guardian: Actually, that target is bad!");
 				}
 				specialUnmarkVision();
@@ -1941,7 +1963,7 @@ import java.util.regex.Pattern;
 		if (goHome && chaseRange > 0) {
 			Location near = nearestPathPoint();
 			if (near != null && (chasing == null || near.distanceSquared(chasing.getLocation()) > crsq)) {
-				if (WorldGuardianPlugin.debugMe) {
+				if (debugMe) {
 					if (near.distanceSquared(getLivingEntity().getLocation()) > 3 * 3) {
 						plugin.getLogger().info("Guardian: screw you guys, I'm going home!");
 					}
@@ -1955,7 +1977,7 @@ import java.util.regex.Pattern;
 				if (npc.getNavigator().getEntityTarget() != null) {
 					npc.getNavigator().cancelNavigation();
 				}
-				if (WorldGuardianPlugin.debugMe) {
+				if (debugMe) {
 					if (near != null && near.distanceSquared(getLivingEntity().getLocation()) > 3 * 3) {
 						plugin.getLogger().info("Guardian: I'll just stand here and hope they come out...");
 					}
@@ -1986,7 +2008,7 @@ import java.util.regex.Pattern;
 	}
 
 	public Location nearestPathPoint() {
-		if (!GuardianTargetUtil.v1_9) {
+		if (!v1_9) {
 			return null; // TODO: !!!
 		}
 		if (!npc.hasTrait(Waypoints.class)) {
@@ -2059,17 +2081,19 @@ import java.util.regex.Pattern;
 		if (entityUUID != getLivingEntity().getUniqueId())
 			return;
 
-		if (destinationLocation != null)
+		// Player must sneak when interacting
+		if (destinationLocation != null && player.isSneaking())
 		{
-			if (dialogue != null && !dialogue.isEmpty())
+			if (farewell != null && !farewell.isEmpty())
 			{
-				int index = NumberUtil.randomInt(0, dialogue.size() - 1);
-				sayTo(player, dialogue.get(index));
+				int index = NumberUtil.randomInt(0, farewell.size() - 1);
+				sayTo(player, farewell.get(index));
 			}
 			else {
 				sayTo(player, "Safe journeys!");
 			}
 			player.teleport(destinationLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
+			event.setCancelled(true);
 		}
 	}
 

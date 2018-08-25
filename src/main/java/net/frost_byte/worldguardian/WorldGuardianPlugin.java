@@ -6,6 +6,8 @@ import com.google.inject.Injector;
 import me.lucko.luckperms.api.LuckPermsApi;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.trait.TraitInfo;
+
+import net.frost_byte.worldguardian.command.*;
 import net.frost_byte.worldguardian.utility.ProjectUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -43,7 +45,7 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 
 	public static final String prefixBad = ChatColor.DARK_GREEN + "[Guardian] " + ChatColor.RED;
 
-	private GuardianTargetFactory targetFactory;
+//	private GuardianTargetFactory targetFactory;
 
 
 	public double maxHealth;
@@ -57,7 +59,7 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 
 	public final static int CONFIG_VERSION = 9;
 
-	final static String InvPrefix = ChatColor.GREEN + "Guardian ";
+	public final static String InvPrefix = ChatColor.GREEN + "Guardian ";
 	/**
 	 * Perform Plugin initialization before it is
 	 * enabled.
@@ -104,7 +106,7 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 		);
 
 		injector = module.createInjector();
-		targetFactory = injector.getInstance(GuardianTargetFactory.class);
+//		targetFactory = injector.getInstance(GuardianTargetFactory.class);
 
 		// Inject all class members annotated with Inject
 		injector.injectMembers(this);
@@ -236,7 +238,11 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 		  Commands
 		 */
 		getLogger().info("Registering Commands");
-		//commandManager.registerCommand(injector.getInstance(VoteCommand.class));
+		commandManager.registerCommand(injector.getInstance(GuardianCommand.class));
+		commandManager.registerCommand(injector.getInstance(GuardianTargetCommand.class));
+		commandManager.registerCommand(injector.getInstance(GuardianConfigCommand.class));
+		commandManager.registerCommand(injector.getInstance(GuardianWorldCommand.class));
+		commandManager.registerCommand(injector.getInstance(GuardianOrderCommand.class));
 	}
 
 	/**

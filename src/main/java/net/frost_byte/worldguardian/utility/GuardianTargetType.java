@@ -1,9 +1,12 @@
 package net.frost_byte.worldguardian.utility;
 
-import net.frost_byte.worldguardian.GuardianTarget;
+
 import org.bukkit.entity.EntityType;
 
-@SuppressWarnings("unused") public enum GuardianTargetType
+import java.util.Arrays;
+
+@SuppressWarnings("unused")
+public enum GuardianTargetType
 {
 	NPCS(new EntityType[]{}, "NPC"),
 	OWNER(new EntityType[]{}, "OWNER"),
@@ -107,14 +110,14 @@ import org.bukkit.entity.EntityType;
 	ILLUSIONERS(new EntityType[]{EntityType.ILLUSIONER}, "ILLUSIONER"),
 
 	// 1.13
-	DOLPHIN(new EntityType[]{}, ""),
-	DROWNED(new EntityType[]{}, ""),
-	COD(new EntityType[]{}, ""),
-	SALMON(new EntityType[]{}, ""),
-	PUFFERFISH(new EntityType[]{}, ""),
-	TROPICAL_FISH(new EntityType[]{}, ""),
-	PHANTOM(new EntityType[]{}, ""),
-	TURTLE(new EntityType[]{}, "");
+	DOLPHIN(new EntityType[]{EntityType.DOLPHIN}, "DOLPHIN"),
+	DROWNED(new EntityType[]{EntityType.DROWNED}, "DROWNED"),
+	COD(new EntityType[]{EntityType.COD}, "COD"),
+	SALMON(new EntityType[]{EntityType.SALMON}, "SALMON"),
+	PUFFERFISH(new EntityType[]{EntityType.PUFFERFISH}, "PUFFERFISH"),
+	TROPICAL_FISH(new EntityType[]{ EntityType.TROPICAL_FISH}, "TROPICAL_FISH", "TROPICALFISH"),
+	PHANTOM(new EntityType[]{EntityType.PHANTOM}, "PHANTOM"),
+	TURTLE(new EntityType[]{EntityType.TURTLE}, "TURTLE");
 	
 	private String[] names;
 	private EntityType[] entityTypes;
@@ -125,6 +128,15 @@ import org.bukkit.entity.EntityType;
 		this.names = names;
 	}
 
+	public static GuardianTargetType findByName(String typeName)
+	{
+		return Arrays.stream(GuardianTargetType.values())
+				.filter(gtt -> gtt.name().equalsIgnoreCase(typeName))
+				.findFirst()
+				.orElse(null);
+	}
+
+	public String getPrimaryName() { return names[0]; }
 	public EntityType[] getEntityTypes() { return entityTypes; }
 	public String[] getNames() { return names; }
 }

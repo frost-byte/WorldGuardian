@@ -3,18 +3,16 @@ package net.frost_byte.worldguardian;
 import co.aikar.commands.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import net.frost_byte.worldguardian.utility.EnumUtil;
+import net.frost_byte.worldguardian.utility.GuardianTargetCategory;
+import net.frost_byte.worldguardian.utility.GuardianTargetType;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
 
 public class ACFSetup
 {
@@ -46,6 +44,15 @@ public class ACFSetup
 				.boxed()
 				.map(Object::toString)
 				.collect(Collectors.toList()));
+
+		comp.registerCompletion("targets", (c) -> getValidTargets());
+		comp.registerCompletion("target_names", (c) -> getValidTargets());
+		comp.registerCompletion("target_categories", (c) ->
+			Stream.of(GuardianTargetCategory.values())
+				.map(GuardianTargetCategory::name)
+				.collect(Collectors.toList())
+		);
+			//EnumUtil.getAll(GuardianTargetCategory.class));
 	}
 
 	/**
@@ -63,70 +70,65 @@ public class ACFSetup
 
 		CommandContexts<BukkitCommandExecutionContext> con = commandManager.getCommandContexts();
 
-		// Converts the input string to an integer
-		con.registerContext(int.class, c -> {
-			int number;
+		con.registerContext(
+			GuardianTargetType.class,
+			c -> {
+				String targetTypeName = c.popFirstArg();
+				logger.info("ACFSetup.registerContext.GuardianTargetType: name: " + targetTypeName);
+				GuardianTargetType targetType;
 
-			try
-			{
-				number = Integer.parseInt(c.popFirstArg());
+				try
+				{
+					targetType = GuardianTargetType.valueOf(c.popFirstArg());
+				}
+				catch (IllegalArgumentException ex)
+				{
+					throw new InvalidCommandArgument("Invalid target type!");
+				}
+
+				return targetType;
 			}
-			catch (NumberFormatException e)
-			{
-				throw new InvalidCommandArgument("Invalid number format.");
-			}
+		);
 
-			return number;
-		});
+		con.registerContext(
+				GuardianTargetCategory.class,
+				c -> {
+					String name = c.popFirstArg();
+					logger.info("ACFSetup.registerContext.GuardianTargetCategory: name: " + name);
+					GuardianTargetCategory targetCategory;
 
+					try
+					{
+						targetCategory = GuardianTargetCategory.valueOf(c.popFirstArg());
+					}
+					catch (IllegalArgumentException ex)
+					{
+						throw new InvalidCommandArgument("Invalid target type!");
+					}
 
-//		con.registerContext(
-//				World.class,
-//				c -> {
-//					String worldName = c.popFirstArg();
-//					logger.info("ACFSetup.registerContext.World: name: " + worldName);
-//					if (worldName == null || worldName.isEmpty())
-//					{
-//						worldName = WorldManager.Survival_World_Name;
-//					}
-//
-//					return worldManager.getWorldByName(worldName);
-//				}
-//		);
+					return targetCategory;
+				}
+		);
 
-//		// Converts a string representing the name of an player that is offline
-//		// into an OfflinePlayer instance
-//		con.registerContext(OfflinePlayer.class, c -> {
-//			OfflinePlayer playerTarget;
-//			CommandSender sender = c.getSender();
-//
-//			if (c.hasFlag("other"))
-//			{
-//				String rawUsername = c.popFirstArg();
-//
-//				if (playerManager.hasPlayedBefore(rawUsername))
-//				{
-//					playerTarget = playerManager.getOfflinePlayerFromRegisteredUsername(rawUsername);
-//				}
-//				else
-//				{
-//					throw new InvalidCommandArgument("That player hasn't joined the server.");
-//				}
-//			}
-//			else
-//			{
-//				if (sender instanceof OfflinePlayer)
-//				{
-//					playerTarget = (OfflinePlayer) sender;
-//				}
-//				else
-//				{
-//					throw new InvalidCommandArgument("The command executor must be an offline player.");
-//				}
-//			}
-//
-//			return playerTarget;
-//		});
+		con.registerContext(
+				GuardianTarget.class,
+				c -> {
+					String targetName = c.popFirstArg();
+					logger.info("ACFSetup.registerContext.GuardianTarget: name: " + targetName);
+					GuardianTarget target;
+
+					try
+					{
+						target = forName(targetName);
+					}
+					catch (IllegalArgumentException ex)
+					{
+						throw new InvalidCommandArgument("Invalid target type!");
+					}
+
+					return target;
+				}
+		);
 
 	}
 
