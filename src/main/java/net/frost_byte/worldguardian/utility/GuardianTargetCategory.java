@@ -54,6 +54,18 @@ public enum GuardianTargetCategory
 		boolean doRegex = true;
 		searchString = ChatColor.translateAlternateColorCodes('&', searchString);
 
+		if (debugMe)
+		{
+			String formatString = "(category, guardian, search) : (%s, %s, %s)";
+			String debugInfo = String.format(
+				formatString,
+				category.name(),
+				guardian.getName(),
+				searchString
+			);
+			getPlugin().getLogger().info("GuardianTargetCategory.addTarget: " + debugInfo);
+		}
+
 		switch (category)
 		{
 			case PLAYER:

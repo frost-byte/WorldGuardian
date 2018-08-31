@@ -12,4 +12,8 @@ public final class NumberUtil
 	{
 		return ThreadLocalRandom.current().nextInt(min, max + 1);
 	}
+	public static double randomDecimal(double min, double max)
+	{
+		return (ThreadLocalRandom.current().nextDouble() * (max - min)) + min;
+	}
 }

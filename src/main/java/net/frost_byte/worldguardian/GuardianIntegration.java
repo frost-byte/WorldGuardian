@@ -10,7 +10,7 @@ public class GuardianIntegration
 		return "{{Error:UnimplementedGetTargetHelp}}";
 	}
 
-	public boolean isTarget(LivingEntity livingEntity, String text)
+	public boolean isTarget(LivingEntity livingEntity, String... options)
 	{
 		return false;
 	}

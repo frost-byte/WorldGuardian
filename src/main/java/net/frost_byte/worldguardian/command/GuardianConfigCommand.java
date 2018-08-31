@@ -296,6 +296,46 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 	}
 
+	@Description("Adjust the how often the guardian will respond to being targeted, in ticks")
+	@Syntax("<rate> How often the guardian will respond to being targeted (1-100)")
+	@Subcommand("targeted_rate|tarrate|trate")
+	@CommandPermission("guardian.targetedrate")
+	@CommandCompletion("@range:1-100")
+	public void setTargetedRate(Player player, double rate)
+	{
+		GuardianTrait guardian = getGuardianFor(player);
+		int d = (int)(rate * 20);
+
+		if (guardian == null)
+		{
+			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			return;
+		}
+
+		try
+		{
+			if (d >= plugin.tickRate && d <= targetedRateMax)
+			{
+				guardian.targetedRate = d;
+				player.sendMessage(
+					prefixGood +
+						"Targeted rate set!"
+				);
+			}
+			else
+			{
+				throw new NumberFormatException("Number out of range.");
+			}
+		}
+		catch (NumberFormatException ex)
+		{
+			player.sendMessage(
+				prefixBad +
+					"Invalid targeted rate number: " + ex.getMessage()
+			);
+		}
+	}
+
 	@Description("Adjust the attack rate, in ticks, for a guardian")
 	@Syntax("<rate> ['ranged'] The attack rate for the guardian (1-100)")
 	@Subcommand("attack_rate|atrate|at_rate")
@@ -503,8 +543,8 @@ public class GuardianConfigCommand extends BaseCommand
 	}
 
 	@Description("Adjust how far the guardian can reach.")
-	@Syntax("<accuracy> The accuracy for the guardian (0-50)")
-	@Subcommand("accuracy")
+	@Syntax("<reach> The reach for the guardian (0-50)")
+	@Subcommand("reach")
 	@CommandPermission("guardian.reach")
 	@CommandCompletion("@range:0-50")
 	public void setReach(Player player, double reach)
@@ -519,8 +559,8 @@ public class GuardianConfigCommand extends BaseCommand
 
 		try
 		{
-			if (reach >= 0 && reach < 50) {
-				guardian.accuracy = reach;
+			if (reach >= 0 && reach <= 50) {
+				guardian.reach = reach;
 				player.sendMessage(
 					prefixGood +
 					"Reach set!"

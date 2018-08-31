@@ -6,6 +6,8 @@ import co.aikar.commands.annotation.*;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.npc.NPC;
 import net.frost_byte.worldguardian.GuardianTrait;
 import net.frost_byte.worldguardian.SentryImport;
 import net.frost_byte.worldguardian.WorldGuardianPlugin;
@@ -57,13 +59,37 @@ public class GuardianCommand extends BaseCommand
 		}
 	}
 
-	@Description("Toggle debugging for the plugin")
+	@Description("Toggle debugging for the selected guardian")
 	@Subcommand("debug")
 	@CommandPermission("guardian.debug")
-	public void setDebug(Player sender)
+	public void toggleGuardianDebugging(Player sender)
 	{
-		debugMe = !debugMe;
-		sender.sendMessage(prefixGood + "Toggled: " + debugMe + "!");
+		net.citizensnpcs.api.npc.NPCSelector selector = CitizensAPI.getDefaultNPCSelector();
+
+		if (selector != null && sender != null)
+		{
+			NPC selected = selector.getSelected(sender);
+
+			if (selected != null && selected.hasTrait(GuardianTrait.class))
+			{
+				selected.getTrait(GuardianTrait.class).toggleDebugging();
+			}
+			sender.sendMessage(prefixGood + "Toggled debugging for the selected guardian!");
+		}
+	}
+
+	@Description("Toggle debugging for the plugin")
+	@Subcommand("enable_debug")
+	@CommandPermission("guardian.debug")
+	public void enableDebugging(Player sender)
+	{
+		net.citizensnpcs.api.npc.NPCSelector selector = CitizensAPI.getDefaultNPCSelector();
+
+		if (sender != null)
+		{
+			sender.sendMessage(prefixGood + "Toggled: " + debugMe + "!");
+			debugMe = !debugMe;
+		}
 	}
 
 	@Description("Get information about the guardian's targets.")
@@ -138,10 +164,12 @@ public class GuardianCommand extends BaseCommand
 		}
 
 		sender.sendMessage(
-			prefixGood + ChatColor.RESET + guardian.getNPC().getFullName() + ColorBasic + ": owned by " + ChatColor.RESET
-				+ getOwner(guardian.getNPC()) + (guardian.getGuarding() == null ?
-				"" :
-				ColorBasic + ", guarding: " + ChatColor.RESET + Bukkit.getOfflinePlayer(guardian.getGuarding()).getName()));
+			prefixGood + ChatColor.RESET + guardian.getNPC().getFullName() +
+			ColorBasic + ": owned by " + ChatColor.RESET + getOwner(guardian.getNPC()) +
+			(guardian.getGuarding() == null ? "" : ColorBasic + ", guarding: " +
+			ChatColor.RESET + Bukkit.getOfflinePlayer(guardian.getGuarding()).getName())
+		);
+		sender.sendMessage(prefixGood + guardian.getInventoryInfo());
 		sender.sendMessage(prefixGood + "Damage: " + ChatColor.AQUA + guardian.damage);
 		sender.sendMessage(prefixGood + "Armor: " + ChatColor.AQUA + guardian.armor);
 		sender.sendMessage(prefixGood + "Health: " + ChatColor.AQUA + (guardian.getNPC().isSpawned() ?

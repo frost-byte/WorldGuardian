@@ -8,6 +8,10 @@ import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.trait.TraitInfo;
 
 import net.frost_byte.worldguardian.command.*;
+import net.frost_byte.worldguardian.integration.GuardianHealth;
+import net.frost_byte.worldguardian.integration.GuardianPermissions;
+import net.frost_byte.worldguardian.integration.GuardianSBTeams;
+import net.frost_byte.worldguardian.integration.GuardianSquads;
 import net.frost_byte.worldguardian.utility.ProjectUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -164,9 +168,10 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 //			}
 //		}.runTaskTimer(this, 100, 20 * 60 * 60);
 //
-//		integrations.add(new GuardianHealth());
-//		integrations.add(new GuardianPermissions());
-//		integrations.add(new GuardianSBTeams());
+		integrations.add(new GuardianHealth());
+		integrations.add(new GuardianPermissions());
+		integrations.add(new GuardianSBTeams());
+		integrations.add(new GuardianSquads());
 
 //		if (Bukkit.getPluginManager().getPlugin("Towny") != null) {
 //			try {

@@ -9,6 +9,7 @@ import net.citizensnpcs.api.ai.EntityTarget;
 import net.citizensnpcs.api.ai.TargetType;
 import net.citizensnpcs.api.ai.TeleportStuckAction;
 import net.citizensnpcs.api.ai.speech.SpeechContext;
+import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.persistence.Persist;
 import net.citizensnpcs.api.trait.Trait;
@@ -27,12 +28,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-
+import org.bukkit.event.entity.*;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EntityEquipment;
@@ -51,20 +47,46 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 import static net.frost_byte.worldguardian.WorldGuardianPlugin.*;
+import static net.frost_byte.worldguardian.utility.GuardianTargetType.*;
 import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
 import static net.frost_byte.worldguardian.utility.MaterialUtil.*;
+import static net.frost_byte.worldguardian.utility.NumberUtil.randomDecimal;
 
 @SuppressWarnings({ "WeakerAccess", "deprecation", "unused" })
 public class GuardianTrait extends Trait
 {
 	public static final double healthMin = 0.01;
 	public static final int attackRateMax = 2000;
+	public static final int targetedRateMax = 2000;
 	public static final int healRateMax = 2000;
+
+	int cleverTicks = 0;
+	public int cTick = 0;
+	public boolean chased = false;
+
+	private boolean canEnforce = false;
+	private boolean guardianProtected;
+	private boolean debugging = false;
+	public long timeSinceAttack = 0;
+	public long timeSinceHeal = 0;
+	public long timeSinceTargeted = 0;
+	public LivingEntity chasing = null;
+	public BukkitRunnable respawnMe;
+
+	public HashSet<GuardianCurrentTarget> currentTargets = new HashSet<>();
+	public HashMap<UUID, Boolean> needsDropsClear = new HashMap<>();
+	private HashSet<UUID> greetedAlready = new HashSet<>();
+
+	Location bunny_goal = new Location(null, 0, 0, 0);
+
+	private final static double MAX_DIST = 100000000;
+	public int ticksCountGuard = 0;
 
 	public interface TraitProvider<T> extends CheckedProvider<T>
 	{
 		T get();
 	}
+
 	@Inject
 	@Named("WorldGuardian")
 	private WorldGuardianPlugin plugin;
@@ -197,6 +219,9 @@ public class GuardianTrait extends Trait
 	@Persist("attackRate")
 	public int attackRate = 30;
 
+	@Persist("targetedRate")
+	public int targetedRate = 30;
+
 	@Persist("attackRateRanged")
 	public int attackRateRanged = 30;
 
@@ -272,8 +297,6 @@ public class GuardianTrait extends Trait
 	@Persist("destinationLocation")
 	public Location destinationLocation = null;
 
-	public LivingEntity chasing = null;
-
 	public UUID getGuarding() {
 		if (guardingLower == 0 && guardingUpper == 0) {
 			return null;
@@ -292,59 +315,136 @@ public class GuardianTrait extends Trait
 		}
 	}
 
-	private boolean canEnforce = false;
+	public boolean getDebugging()
+	{
+		return debugging;
+	}
+
+	public void setDebugging(boolean debug)
+	{
+		debugging = debug;
+	}
+
+	public void toggleDebugging()
+	{
+		debugging = !debugging;
+
+		if (debugging)
+			debugMe = true;
+	}
 
 	@SuppressWarnings("deprecation") @EventHandler(priority = EventPriority.LOWEST)
 	public void whenAttacksAreHappening(EntityDamageByEntityEvent event) {
+		if (debugging)
+		{
+			plugin.getLogger().info("GuardianTrait.whenAttacksAreHappening");
+		}
 		if (!npc.isSpawned())
 		{
+			if (debugging)
+			{
+				plugin.getLogger().info("Guardian: noNpcSpawned");
+			}
+
 			return;
 		}
 		if (event.isCancelled())
 		{
+			if (debugging)
+			{
+				plugin.getLogger().info("Guardian: eventCancelled");
+			}
+
 			return;
 		}
-		if (event.getEntity().getUniqueId().equals(getLivingEntity().getUniqueId()))
+
+		double finalDamage = event.getFinalDamage();
+		LivingEntity me = getLivingEntity();
+		UUID myID = me.getUniqueId();
+
+		Entity victim = event.getEntity();
+		UUID victimID = victim.getUniqueId();
+
+		Entity attacker = event.getDamager();
+		UUID attackerID = attacker.getUniqueId();
+
+		boolean imBeingAttacked = victimID.equals(myID);
+		boolean imAttacking = attackerID.equals(myID);
+
+		if (debugging)
 		{
+			String debugFormat = "me ( %s, %s ), victim ( %s, %s ), attacker ( %s, %s )";
+			String debugOutput = String.format(
+				debugFormat,
+				me.toString(),
+				myID.toString(),
+				victim.toString(),
+				victimID,
+				attacker.toString(),
+				attackerID
+			);
+
+			plugin.getLogger().info(debugOutput);
+		}
+
+		// The Guardian is being attacked by someone
+		if (imBeingAttacked)
+		{
+			if (debugging)
+				plugin.getLogger().info("Guardian: " + me.getCustomName() + " Attacked!");
+
 			if (!event.isApplicable(EntityDamageEvent.DamageModifier.ARMOR))
 			{
+				if (debugging)
+					plugin.getLogger().info("Guardian: event Applicable, setting Damage");
 
 				event.setDamage(
 					EntityDamageEvent.DamageModifier.BASE,
-					(1.0 - getArmor(getLivingEntity())) * event.getDamage(EntityDamageEvent.DamageModifier.BASE)
+					(1.0 - getArmor(me)) * event.getDamage(EntityDamageEvent.DamageModifier.BASE)
 				);
 			}
 			else
 			{
+				if (debugging)
+					plugin.getLogger().info("Guardian: event NOT Applicable, setting Damage");
+
 				event.setDamage(
 					EntityDamageEvent.DamageModifier.ARMOR,
-					-getArmor(getLivingEntity()) * event.getDamage(EntityDamageEvent.DamageModifier.BASE)
+					-getArmor(me) * event.getDamage(EntityDamageEvent.DamageModifier.BASE)
 				);
 			}
 			return;
 		}
-		if (event.getDamager().getUniqueId().equals(getLivingEntity().getUniqueId()))
+
+		// The guardian is attacking someone
+		if (imAttacking)
 		{
+			if (debugging)
+				plugin.getLogger().info("Guardian: " + me.getCustomName() + " Attacking!");
+
 			if (plugin.getConfig().getBoolean("random.enforce damage", false))
 			{
 				if (canEnforce)
 				{
+					if (debugging)
+						plugin.getLogger().info("Guardian: enforcing Damage!");
+
 					canEnforce = false;
 					whenAttacksHappened(event);
 					if (!event.isCancelled())
 					{
-						((LivingEntity) event.getEntity()).damage(event.getFinalDamage());
+						if (debugging)
+							plugin.getLogger().info("Guardian: " + me.getCustomName() +
+								"Attacking, event not cancelled!");
+
+						me.damage(finalDamage);
 					}
-					if (debugMe)
-					{
-						plugin.getLogger().info("Guardian: enforce damage value to " + event.getFinalDamage());
-					}
+					if (debugging)
+						plugin.getLogger().info("Guardian: enforce damage value to " + finalDamage);
 				}
 				else {
-					if (debugMe)
-					{
+					if (debugging)
 						plugin.getLogger().info("Guardian: refuse damage enforcement");
-					}
 				}
 				event.setDamage(0);
 				event.setCancelled(true);
@@ -352,29 +452,42 @@ public class GuardianTrait extends Trait
 			}
 			event.setDamage(EntityDamageEvent.DamageModifier.BASE, getDamage());
 		}
-		if (event.getDamager() instanceof Projectile) {
-			ProjectileSource source = ((Projectile) event.getDamager()).getShooter();
-			if (source instanceof LivingEntity && ((LivingEntity) source).getUniqueId().equals(getLivingEntity().getUniqueId())) {
+
+		// The source of damage was a projectile
+		if (attacker instanceof Projectile) {
+			if (debugging)
+				plugin.getLogger().info("Guardian: Projectile Attack!");
+
+			ProjectileSource source = ((Projectile) attacker).getShooter();
+
+			// The Guardian is attacking with a Projectile.
+			if (source instanceof LivingEntity && ((LivingEntity) source).getUniqueId().equals(myID)) {
+				if (debugging)
+					plugin.getLogger().info("Guardian " + me.getCustomName() + " Attacking with Projectile!");
+
 				if (plugin.getConfig().getBoolean("random.enforce damage", false)) {
 					if (canEnforce) {
 						canEnforce = false;
 						whenAttacksHappened(event);
 						if (!event.isCancelled()) {
-							((LivingEntity) event.getEntity()).damage(getDamage());
+							((LivingEntity) victim).damage(getDamage());
 						}
-						if (debugMe) {
-							plugin.getLogger().info("Guardian: enforce damage value to " + getDamage());
+						if (debugging) {
+							plugin.getLogger().info("Guardian: enforce projectile damage value to " + getDamage());
 						}
 					}
 					else {
-						if (debugMe) {
-							plugin.getLogger().info("Guardian: refuse damage enforcement");
+						if (debugging) {
+							plugin.getLogger().info("Guardian: refuse projectile damage enforcement");
 						}
 					}
 					event.setDamage(0);
 					event.setCancelled(true);
 					return;
 				}
+				if (debugging)
+					plugin.getLogger().info("Guardian: Applying projectile damage from guardian");
+
 				double dam = getDamage();
 				double modder = event.getDamage(EntityDamageEvent.DamageModifier.BASE);
 				double rel = modder == 0.0 ? 1.0 : dam / modder;
@@ -382,7 +495,7 @@ public class GuardianTrait extends Trait
 				for (EntityDamageEvent.DamageModifier mod : EntityDamageEvent.DamageModifier.values()) {
 					if (mod != EntityDamageEvent.DamageModifier.BASE && event.isApplicable(mod)) {
 						event.setDamage(mod, event.getDamage(mod) * rel);
-						if (debugMe) {
+						if (debugging) {
 							plugin.getLogger().info("Guardian: Set damage for " + mod + " to " + event.getDamage(mod));
 						}
 					}
@@ -393,14 +506,39 @@ public class GuardianTrait extends Trait
 
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void whenAttacksHappened(EntityDamageByEntityEvent event) {
-		if (!npc.isSpawned()) {
+		if (!npc.isSpawned() || event.isCancelled())
 			return;
+
+		double finalDamage = event.getFinalDamage();
+		LivingEntity me = getLivingEntity();
+		UUID myID = me.getUniqueId();
+
+		Entity victim = event.getEntity();
+		UUID victimID = victim.getUniqueId();
+
+		Entity attacker = event.getDamager();
+		UUID attackerID = attacker.getUniqueId();
+
+		boolean imBeingAttacked = victimID.equals(myID);
+		boolean imAttacking = attackerID.equals(myID);
+
+		if (debugging)
+		{
+			String debugFormat = "me ( %s, %s ), victim ( %s, %s ), attacker ( %s, %s )";
+			String debugOutput = String.format(
+				debugFormat,
+				me.toString(),
+				myID.toString(),
+				victim.toString(),
+				victimID,
+				attacker.toString(),
+				attackerID
+			);
+
+			plugin.getLogger().info(debugOutput);
 		}
-		if (event.isCancelled()) {
-			return;
-		}
-		boolean isMe = event.getEntity().getUniqueId().equals(getLivingEntity().getUniqueId());
-		if (guardianProtected && isMe) {
+
+		if (guardianProtected && imBeingAttacked) {
 			if (event.getDamager() instanceof LivingEntity && isIgnored((LivingEntity) event.getDamager())) {
 				event.setCancelled(true);
 				return;
@@ -413,86 +551,130 @@ public class GuardianTrait extends Trait
 				}
 			}
 		}
-		boolean isFriend = getGuarding() != null && event.getEntity().getUniqueId().equals(getGuarding());
-		boolean attackerIsMe = event.getDamager().getUniqueId().equals(getLivingEntity().getUniqueId());
-		if (isMe || isFriend) {
-			if (attackerIsMe) {
+		boolean isFriend = getGuarding() != null && victimID.equals(getGuarding());
+
+		if (imBeingAttacked || isFriend) {
+			if (imAttacking) {
 				event.setCancelled(true);
 				return;
 			}
-			if (isMe) {
+			if (imBeingAttacked) {
 				stats_damageTaken += event.getFinalDamage();
 			}
-			if (fightback && (event.getDamager() instanceof LivingEntity) && !isIgnored((LivingEntity) event.getDamager())) {
-				addTarget(event.getDamager().getUniqueId());
+			if (fightback && (attacker instanceof LivingEntity) && !isIgnored((LivingEntity) attacker)) {
+				if (debugging)
+					plugin.getLogger().info("GuardianTrait.whenAttacksHappened: Guardian " + me.getCustomName() +
+						" Adding attacker as target!");
+
+				addTarget(attackerID);
 			}
-			else if (event.getDamager() instanceof Projectile) {
-				ProjectileSource source = ((Projectile) event.getDamager()).getShooter();
+			else if (attacker instanceof Projectile) {
+				ProjectileSource source = ((Projectile) attacker).getShooter();
 				if (fightback && (source instanceof LivingEntity) && !isIgnored((LivingEntity) source)) {
-					if (((LivingEntity) source).getUniqueId().equals(getLivingEntity().getUniqueId())) {
+					if (((LivingEntity) source).getUniqueId().equals(myID)) {
 						event.setCancelled(true);
 						return;
 					}
+					if (debugging)
+						plugin.getLogger().info("GuardianTrait.whenAttacksHappened: Guardian " + me.getCustomName() + " Adding "
+							+ "RANGED attacker as target!");
 					addTarget(((LivingEntity) source).getUniqueId());
 				}
 			}
+
 			return;
 		}
-		if (attackerIsMe) {
-			if (safeShot && !shouldTarget((LivingEntity) event.getEntity())) {
+
+		if (imAttacking) {
+			if (debugging)
+				plugin.getLogger().info("GuardianTrait.whenAttacksHappened: Guardian " + me.getCustomName() + " attacked itself!");
+
+			if (safeShot && !shouldTarget((LivingEntity) victim)) {
 				event.setCancelled(true);
 				return;
 			}
 			stats_damageGiven += event.getFinalDamage();
+
 			if (!enemyDrops) {
-				needsDropsClear.put(event.getEntity().getUniqueId(), true);
+				needsDropsClear.put(victimID, true);
 			}
 			return;
 		}
-		Entity e = event.getDamager();
-		if (!(e instanceof LivingEntity)) {
-			if (e instanceof Projectile) {
-				ProjectileSource source = ((Projectile) e).getShooter();
+
+		LivingEntity shooter = null;
+
+		if (!(attacker instanceof LivingEntity)) {
+			if (attacker instanceof Projectile) {
+				if (debugging)
+					plugin.getLogger().info("GuardianTrait.whenAttacksHappened: Projectile Attack!");
+
+				ProjectileSource source = ((Projectile) attacker).getShooter();
+
 				if (source instanceof LivingEntity) {
-					e = (LivingEntity) source;
-					if (e.getUniqueId().equals(getLivingEntity().getUniqueId())) {
-						if (safeShot && !shouldTarget((LivingEntity) event.getEntity())) {
+					shooter = (LivingEntity) source;
+
+					if (shooter.getUniqueId().equals(myID)) {
+						if (debugging)
+							plugin.getLogger().info("GuardianTrait.whenAttacksHappened: Guardian " + shooter.getCustomName() + " shot "
+								+ "itself!");
+
+						if (safeShot && !shouldTarget((LivingEntity) victim)) {
 							event.setCancelled(true);
 							return;
 						}
 						stats_damageGiven += event.getFinalDamage();
+
 						if (!enemyDrops) {
-							needsDropsClear.put(event.getEntity().getUniqueId(), true);
+							needsDropsClear.put(victimID, true);
 						}
 						return;
 					}
 				}
 			}
 		}
+
+		if (debugging)
+			plugin.getLogger().info("GuardianTrait.whenAttacksHappened: Guardian " + getName() + " checking event target!");
 		boolean isEventTarget = false;
+
 		if (eventTargets.contains("pvp")
-				&& event.getEntity() instanceof Player
-				&& !CitizensAPI.getNPCRegistry().isNPC(event.getEntity())) {
+				&& victim instanceof Player
+				&& !CitizensAPI.getNPCRegistry().isNPC(victim)) {
 			isEventTarget = true;
 		}
 		else if (eventTargets.contains("pve")
-				&& !(event.getEntity() instanceof Player)
-				&& event.getEntity() instanceof LivingEntity) {
+				&& !(victim instanceof Player)
+				&& victim instanceof LivingEntity) {
 			isEventTarget = true;
 		}
 		else if (eventTargets.contains("pvnpc")
-				&& event.getEntity() instanceof LivingEntity
-				&& CitizensAPI.getNPCRegistry().isNPC(event.getEntity())) {
+				&& victim instanceof LivingEntity
+				&& CitizensAPI.getNPCRegistry().isNPC(victim)) {
 			isEventTarget = true;
 		}
 		else if (eventTargets.contains("pvguardian")
-				&& event.getEntity() instanceof LivingEntity
-				&& CitizensAPI.getNPCRegistry().isNPC(event.getEntity())
-				&& CitizensAPI.getNPCRegistry().getNPC(event.getEntity()).hasTrait(GuardianTrait.class)) {
+				&& victim instanceof LivingEntity
+				&& CitizensAPI.getNPCRegistry().isNPC(victim)
+				&& CitizensAPI.getNPCRegistry().getNPC(victim).hasTrait(GuardianTrait.class)) {
 			isEventTarget = true;
 		}
-		if (isEventTarget && e != null && e instanceof LivingEntity && canSee((LivingEntity) e) && !isIgnored((LivingEntity) e)) {
-			addTarget(e.getUniqueId());
+
+		if (shooter != null)
+		{
+			attacker = shooter;
+			attackerID = shooter.getUniqueId();
+		}
+
+		if (
+			isEventTarget &&
+			attacker instanceof LivingEntity &&
+			canSee((LivingEntity) attacker) &&
+			!isIgnored((LivingEntity) attacker)
+		){
+			if (debugging)
+				plugin.getLogger().info("GuardianTrait.whenAttacksHappened: Guardian " + getName() + " Adding event target!");
+
+			addTarget(attackerID);
 		}
 	}
 
@@ -502,8 +684,6 @@ public class GuardianTrait extends Trait
 		target.targetID = event.getEntity().getUniqueId();
 		currentTargets.remove(target);
 	}
-
-	private boolean guardianProtected;
 
 	@Override
 	public void onAttach() {
@@ -536,7 +716,7 @@ public class GuardianTrait extends Trait
 			speed = 1;
 		}
 		autoswitch = config.getBoolean("guardian defaults.autoswitch", false);
-		ignores.add(GuardianTargetType.OWNER.name());
+		ignores.add(OWNER.name());
 		guardianProtected = config.getBoolean("random.protected", false);
 		reach = config.getDouble("reach", 3);
 	}
@@ -758,7 +938,8 @@ public class GuardianTrait extends Trait
 		multiplier += weapon.getItemMeta() == null || !weapon.getItemMeta().hasEnchant(Enchantment.DAMAGE_ALL)
 				? 0 : weapon.getItemMeta().getEnchantLevel(Enchantment.DAMAGE_ALL) * 0.2;
 		Material weaponType = weapon.getType();
-		if (getMaterials("bows").contains(weaponType)) {
+		Set<Material> bowMaterials = getMaterials("bows");
+		if (bowMaterials != null && bowMaterials.contains(weaponType)) {
 			return 6 * (1 + (weapon.getItemMeta() == null || !weapon.getItemMeta().hasEnchant(Enchantment.ARROW_DAMAGE)
 					? 0 : weapon.getItemMeta().getEnchantLevel(Enchantment.ARROW_DAMAGE) * 0.3));
 		}
@@ -801,7 +982,7 @@ public class GuardianTrait extends Trait
 		swingWeapon();
 		stats_punches++;
 		if (plugin.getConfig().getBoolean("random.workaround damage", false)) {
-			if (debugMe) {
+			if (debugging) {
 				plugin.getLogger().info("Guardian: workaround damage value at " + getDamage() + " yields "
 						+ ((getDamage() * (1.0 - getArmor(entity)))));
 			}
@@ -816,14 +997,12 @@ public class GuardianTrait extends Trait
 			}
 		}
 		else {
-			if (debugMe) {
+			if (debugging) {
 				plugin.getLogger().info("Guardian: Punch/natural for " + getDamage());
 			}
 			entity.damage(getDamage(), getLivingEntity());
 		}
 	}
-
-	Location bunny_goal = new Location(null, 0, 0, 0);
 
 	public Entity getTargetFor(EntityTarget targ) {
 		if (v1_9) {
@@ -1124,7 +1303,7 @@ public class GuardianTrait extends Trait
 		// TODO: Simplify this code!
 		stats_attackAttempts++;
 		double dist = getLivingEntity().getEyeLocation().distanceSquared(entity.getEyeLocation());
-		if (debugMe) {
+		if (debugging) {
 			plugin.getLogger().info("Guardian: tryAttack at range " + dist);
 		}
 		if (autoswitch && dist > reach * reach) {
@@ -1136,7 +1315,7 @@ public class GuardianTrait extends Trait
 		GuardianAttackEvent sat = new GuardianAttackEvent(npc);
 		Bukkit.getPluginManager().callEvent(sat);
 		if (sat.isCancelled()) {
-			if (debugMe) {
+			if (debugging) {
 				plugin.getLogger().info("Guardian: tryAttack refused, event cancellation");
 			}
 			return;
@@ -1306,7 +1485,7 @@ public class GuardianTrait extends Trait
 				timeSinceAttack = 0;
 				swingWeapon();
 				entity.getWorld().strikeLightningEffect(entity.getLocation());
-				if (debugMe) {
+				if (debugging) {
 					plugin.getLogger().info("Guardian: Lightning hits for " + getDamage());
 				}
 				entity.damage(getDamage());
@@ -1351,7 +1530,7 @@ public class GuardianTrait extends Trait
 		else {
 			if (dist < reach * reach) {
 				if (timeSinceAttack < attackRate) {
-					if (debugMe) {
+					if (debugging) {
 						plugin.getLogger().info("Guardian: tryAttack refused, timeSinceAttack");
 					}
 					if (closeChase) {
@@ -1361,7 +1540,7 @@ public class GuardianTrait extends Trait
 				}
 				timeSinceAttack = 0;
 				// TODO: Damage sword if needed!
-				if (debugMe) {
+				if (debugging) {
 					plugin.getLogger().info("Guardian: tryAttack passed!");
 				}
 				punch(entity);
@@ -1371,7 +1550,7 @@ public class GuardianTrait extends Trait
 				}
 			}
 			else if (closeChase) {
-				if (debugMe) {
+				if (debugging) {
 					plugin.getLogger().info("Guardian: tryAttack refused, range");
 				}
 				chase(entity);
@@ -1419,6 +1598,34 @@ public class GuardianTrait extends Trait
 					Math.abs(yaw + 360 - yawHelp) < 90;
 		}
 		return true;
+	}
+
+	public String getInventoryInfo()
+	{
+		if (!npc.hasTrait(Inventory.class)) {
+			return "Inventory is empty";
+		}
+
+		ItemStack[] items = npc.getTrait(Inventory.class).getContents();
+
+		if (items == null)
+			return "Inventory is empty";
+
+		StringBuilder builder = new StringBuilder();
+
+		builder.append(ChatColor.GOLD)
+			.append("Items\n")
+			.append("------\n")
+			.append(ChatColor.AQUA);
+
+		Arrays.stream(items)
+			.filter(Objects::nonNull)
+			.forEach(
+				i -> builder.append(i.getType())
+					.append("\n")
+			);
+
+		return builder.toString();
 	}
 
 	public LivingEntity getLivingEntity() {
@@ -1537,10 +1744,6 @@ public class GuardianTrait extends Trait
 				isTargeted(entity) && !isIgnored(entity);
 	}
 
-	public HashSet<GuardianCurrentTarget> currentTargets = new HashSet<>();
-
-	private HashSet<UUID> greetedAlready = new HashSet<>();
-
 	public void addTarget(UUID id) {
 		if (id.equals(getLivingEntity().getUniqueId())) {
 			return;
@@ -1630,7 +1833,7 @@ public class GuardianTrait extends Trait
 			}
 		}
 		if (entity.hasMetadata("NPC")) {
-			return ignores.contains(GuardianTargetType.NPCS.name()) ||
+			return ignores.contains(NPCS.name()) ||
 					isRegexTargeted(CitizensAPI.getNPCRegistry().getNPC(entity).getName(), npcNameIgnores);
 		}
 		else if (entity instanceof Player) {
@@ -1655,7 +1858,7 @@ public class GuardianTrait extends Trait
 			return true;
 		}
 		if (
-			ignores.contains(GuardianTargetType.OWNER.name()) &&
+			ignores.contains(OWNER.name()) &&
 			entity.getUniqueId().equals(npc.getTrait(Owner.class).getOwnerId())) {
 			return true;
 		}
@@ -1676,11 +1879,12 @@ public class GuardianTrait extends Trait
 			return false;
 		}
 		GuardianCurrentTarget target = new GuardianCurrentTarget();
+		UUID myID = getLivingEntity().getUniqueId();
 		target.targetID = entity.getUniqueId();
-		if (entity.getUniqueId().equals(getLivingEntity().getUniqueId())) {
+		if (target.targetID.equals(myID)) {
 			return false;
 		}
-		if (getGuarding() != null && entity.getUniqueId().equals(getGuarding())) {
+		if (getGuarding() != null && target.targetID.equals(getGuarding())) {
 			return false;
 		}
 		if (currentTargets.contains(target)) {
@@ -1706,7 +1910,7 @@ public class GuardianTrait extends Trait
 			}
 		}
 		if (entity.hasMetadata("NPC")) {
-			return targets.contains(GuardianTargetType.NPCS.name()) ||
+			return targets.contains(NPCS.name()) ||
 					isRegexTargeted(CitizensAPI.getNPCRegistry().getNPC(entity).getName(), npcNameTargets);
 		}
 		if (entity instanceof Player) {
@@ -1727,7 +1931,7 @@ public class GuardianTrait extends Trait
 		else if (isRegexTargeted(entity.getCustomName() == null ? entity.getType().name() : entity.getCustomName(), entityNameTargets)) {
 			return true;
 		}
-		if (targets.contains(GuardianTargetType.OWNER.name()) && entity.getUniqueId().equals(npc.getTrait(Owner.class).getOwnerId())) {
+		if (targets.contains(OWNER.name()) && entity.getUniqueId().equals(npc.getTrait(Owner.class).getOwnerId())) {
 			return true;
 		}
 		HashSet<GuardianTarget> possible = findTargetByEntityType(entity.getType());
@@ -1741,8 +1945,6 @@ public class GuardianTrait extends Trait
 		return false;
 	}
 
-	public int cTick = 0;
-
 	/**
 	 * This method searches for the nearest targetable entity with direct line-of-sight.
 	 * Failing a direct line of sight, the nearest entity in range at all will be chosen.
@@ -1753,12 +1955,17 @@ public class GuardianTrait extends Trait
 		double crsq = chaseRange * chaseRange;
 		Location pos = getGuardZone();
 		if (!getGuardZone().getWorld().equals(getLivingEntity().getWorld())) {
+			if (debugging)
+				plugin.getLogger().info("findBestTarget: cancelling navigation, GuardZone in a different World!");
 			// Emergency corrective measures...
 			npc.getNavigator().cancelNavigation();
 			getLivingEntity().teleport(getGuardZone());
 			return null;
 		}
 		if (!pos.getWorld().equals(getLivingEntity().getWorld())) {
+			if (debugging)
+				plugin.getLogger().info("findBestTarget: Exiting, GuardZone in a different World!");
+
 			return null;
 		}
 		LivingEntity closest = null;
@@ -1771,8 +1978,14 @@ public class GuardianTrait extends Trait
 			GuardianCurrentTarget sct = new GuardianCurrentTarget();
 			sct.targetID = ent.getUniqueId();
 			if ((dist < rangesquared && shouldTarget(ent) && canSee(ent)) || (dist < crsq && currentTargets.contains(sct))) {
+				if (debugging)
+					plugin.getLogger().info("findBestTarget: Target found!");
+
 				boolean hasLos = canSee(ent);
 				if (!wasLos || hasLos) {
+					if (debugging)
+						plugin.getLogger().info("findBestTarget: Line of sight to Target!");
+
 					rangesquared = dist;
 					closest = ent;
 					wasLos = hasLos;
@@ -1781,10 +1994,6 @@ public class GuardianTrait extends Trait
 		}
 		return closest;
 	}
-
-	public long timeSinceAttack = 0;
-
-	public long timeSinceHeal = 0;
 
 	private Entity getEntityForID(UUID id) {
 		if (!v1_12) {
@@ -1837,12 +2046,8 @@ public class GuardianTrait extends Trait
 		}
 	}
 
-	int cleverTicks = 0;
-
-	public boolean chased = false;
-
 	public void specialMarkVision() {
-		if (debugMe) {
+		if (debugging) {
 			plugin.getLogger().info("Guardian: Target! I see you, " + (chasing == null ? "(Unknown)" : chasing.getName()));
 		}
 		if (v1_11 && getLivingEntity().getType() == EntityType.SHULKER) {
@@ -1851,7 +2056,7 @@ public class GuardianTrait extends Trait
 	}
 
 	public void specialUnmarkVision() {
-		if (debugMe) {
+		if (debugging) {
 			plugin.getLogger().info("Guardian: Goodbye, visible target " + (chasing == null ? "(Unknown)" : chasing.getName()));
 		}
 		if (v1_11 && getLivingEntity().getType() == EntityType.SHULKER) {
@@ -1859,12 +2064,50 @@ public class GuardianTrait extends Trait
 		}
 	}
 
+	public static Location rayTrace(Location start, Location end) {
+		double dSq = start.distanceSquared(end);
+		if (dSq < 1) {
+			if (end.getBlock().getType().isSolid()) {
+				return start.clone();
+			}
+			return end.clone();
+		}
+		double dist = Math.sqrt(dSq);
+		Vector move = end.toVector().subtract(start.toVector()).multiply(1.0 / dist);
+		int iters = (int) Math.ceil(dist);
+		Location cur = start.clone();
+		Location next = cur.clone().add(move);
+		for (int i = 0; i < iters; i++) {
+			if (next.getBlock().getType().isSolid()) {
+				return cur;
+			}
+			cur = cur.add(move);
+			next = next.add(move);
+		}
+		return cur;
+	}
+
+	public static Location pickNear(Location start, double range)
+	{
+		Location hit = rayTrace(start.clone().add(0, 1.5, 0),
+			start.clone().add(randomDecimal(-range, range), 1.5, randomDecimal(range, range))
+		);
+
+		if (hit.subtract(0, 1, 0).getBlock().getType().isSolid())
+		{
+			return hit;
+		}
+
+		return hit.subtract(0, 1, 0);
+	}
+
 	public void runUpdate() {
 		canEnforce = true;
 		timeSinceAttack += plugin.tickRate;
 		timeSinceHeal += plugin.tickRate;
+		timeSinceTargeted += plugin.tickRate;
 		if (getLivingEntity().getLocation().getY() <= 0) {
-			if (debugMe) {
+			if (debugging) {
 				plugin.getLogger().info("Guardian: Injuring self, I'm below the map!");
 			}
 			getLivingEntity().damage(1);
@@ -1898,11 +2141,11 @@ public class GuardianTrait extends Trait
 		LivingEntity target = findBestTarget();
 		if (target != null) {
 			Location near = nearestPathPoint();
-			if (debugMe) {
+			if (debugging) {
 				plugin.getLogger().info("Guardian: target selected to be " + target.getName());
 			}
 			if (crsq <= 0 || near == null || near.distanceSquared(target.getLocation()) <= crsq) {
-				if (debugMe) {
+				if (debugging) {
 					plugin.getLogger().info("Guardian: Attack target within range of safe zone: "
 							+ (near == null ? "Any" : near.distanceSquared(target.getLocation())));
 				}
@@ -1915,11 +2158,10 @@ public class GuardianTrait extends Trait
 				goHome = false;
 			}
 			else {
-				if (debugMe) {
+				if (debugging) {
 					plugin.getLogger().info("Guardian: Actually, that target is bad!");
 				}
 				specialUnmarkVision();
-				//target = null;
 				chasing = null;
 				cleverTicks = 0;
 			}
@@ -1927,6 +2169,9 @@ public class GuardianTrait extends Trait
 		else if (chasing != null && chasing.isValid()) {
 			cleverTicks++;
 			if (cleverTicks >= plugin.cleverTicks) {
+				if (debugging)
+					plugin.getLogger().info("Guardian: Valid Chasing, Unmarking Vision!");
+
 				specialUnmarkVision();
 				chasing = null;
 			}
@@ -1939,6 +2184,9 @@ public class GuardianTrait extends Trait
 			}
 		}
 		else if (chasing == null) {
+			if (debugging)
+				plugin.getLogger().info("Guardian: Invalid Chasing, Unmarking Vision!");
+
 			specialUnmarkVision();
 		}
 		if (getGuarding() != null) {
@@ -1951,11 +2199,17 @@ public class GuardianTrait extends Trait
 					npc.teleport(player.getLocation(), PlayerTeleportEvent.TeleportCause.PLUGIN);
 				}
 				if (dist > 7 * 7) {
-					npc.getNavigator().getDefaultParameters().range(100);
-					npc.getNavigator().getDefaultParameters().stuckAction(TeleportStuckAction.INSTANCE);
-					npc.getNavigator().setTarget(player.getLocation());
-					npc.getNavigator().getLocalParameters().speedModifier((float) speed);
-					chased = true;
+					// TODO: distance margins (7 above, 2 below, 4 below) configuration options?
+					ticksCountGuard += plugin.tickRate;
+					if (ticksCountGuard >= 30) {
+						ticksCountGuard = 0;
+						npc.getNavigator().getDefaultParameters().distanceMargin(2);
+						npc.getNavigator().getDefaultParameters().range(100);
+						npc.getNavigator().getDefaultParameters().stuckAction(TeleportStuckAction.INSTANCE);
+						npc.getNavigator().setTarget(pickNear(player.getLocation(), 4));
+						npc.getNavigator().getLocalParameters().speedModifier((float) speed);
+						chased = true;
+					}
 				}
 				goHome = false;
 			}
@@ -1963,7 +2217,7 @@ public class GuardianTrait extends Trait
 		if (goHome && chaseRange > 0) {
 			Location near = nearestPathPoint();
 			if (near != null && (chasing == null || near.distanceSquared(chasing.getLocation()) > crsq)) {
-				if (debugMe) {
+				if (debugging) {
 					if (near.distanceSquared(getLivingEntity().getLocation()) > 3 * 3) {
 						plugin.getLogger().info("Guardian: screw you guys, I'm going home!");
 					}
@@ -1977,7 +2231,7 @@ public class GuardianTrait extends Trait
 				if (npc.getNavigator().getEntityTarget() != null) {
 					npc.getNavigator().cancelNavigation();
 				}
-				if (debugMe) {
+				if (debugging) {
 					if (near != null && near.distanceSquared(getLivingEntity().getLocation()) > 3 * 3) {
 						plugin.getLogger().info("Guardian: I'll just stand here and hope they come out...");
 					}
@@ -1988,8 +2242,6 @@ public class GuardianTrait extends Trait
 			npc.getNavigator().cancelNavigation();
 		}
 	}
-
-	private final static double MAX_DIST = 100000000;
 
 	public Location getGuardZone() {
 		if (getGuarding() != null) {
@@ -2051,8 +2303,6 @@ public class GuardianTrait extends Trait
 		}
 	}
 
-	public BukkitRunnable respawnMe;
-
 	@Override
 	public void onSpawn() {
 		stats_timesSpawned++;
@@ -2069,20 +2319,41 @@ public class GuardianTrait extends Trait
 		npc.getDefaultSpeechController().speak(sc, "chat");
 	}
 
+	public void sayToNearbyPlayers(String message, int distance)
+	{
+		if (message == null || message.isEmpty() || getLivingEntity() == null)
+			return;
+
+		Location location = getLivingEntity().getEyeLocation();
+		int distSquared = distance * distance;
+
+		Bukkit.getServer().getOnlinePlayers().stream()
+			.filter(pl -> pl.getWorld() == location.getWorld() &&
+				location.distanceSquared(pl.getLocation()) < distSquared)
+			.findFirst()
+			.ifPresent(nearbyPlayer -> sayTo(nearbyPlayer, message));
+
+	}
+
 	@EventHandler
-	public void onPlayerInteractEntity(PlayerInteractEntityEvent event)
+	public void onPlayerRightClick(NPCRightClickEvent event)
 	{
 		if (event.isCancelled())
 			return;
+		NPC npc = event.getNPC();
+		Player player = event.getClicker();
 
-		Player player = event.getPlayer();
-		UUID entityUUID = event.getRightClicked().getUniqueId();
+		if (player == null || npc == null || !player.isSneaking() || getLivingEntity() == null)
+			return;
 
-		if (entityUUID != getLivingEntity().getUniqueId())
+		UUID myID = getLivingEntity().getUniqueId();
+		UUID npcID = npc.getEntity().getUniqueId();
+
+		if (npcID == null || npcID != myID)
 			return;
 
 		// Player must sneak when interacting
-		if (destinationLocation != null && player.isSneaking())
+		if (destinationLocation != null)
 		{
 			if (farewell != null && !farewell.isEmpty())
 			{
@@ -2098,12 +2369,58 @@ public class GuardianTrait extends Trait
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onPlayerTeleports(PlayerTeleportEvent event) {
-		if (event.isCancelled()) {
+	public void onPlayerTeleports(final PlayerTeleportEvent event) {
+		if (
+			event.isCancelled() ||
+			getGuarding() == null ||
+			!event.getPlayer().getUniqueId().equals(getGuarding()) ||
+			!npc.isSpawned()
+		){
 			return;
 		}
-		if (getGuarding() != null && event.getPlayer().getUniqueId().equals(getGuarding())) {
+
+		if (event.getFrom().getWorld().equals(event.getTo().getWorld())) {
 			npc.teleport(event.getTo(), PlayerTeleportEvent.TeleportCause.PLUGIN);
+		}
+		else { // World loading up can cause glitches.
+			event.getFrom().getChunk().load();
+			event.getTo().getChunk().load();
+			Bukkit.getScheduler().runTaskLater(plugin, () -> {
+				if (!event.getPlayer().getWorld().equals(event.getTo().getWorld())) {
+					return;
+				}
+				event.getFrom().getChunk().load();
+				event.getTo().getChunk().load();
+				npc.spawn(event.getTo());
+			}, 1);
+		}
+	}
+
+	@EventHandler
+	public void onEntityTargetGuardian(EntityTargetLivingEntityEvent event)
+	{
+		if (
+			!npc.isSpawned() ||
+			timeSinceTargeted < targetedRate ||
+			event.getEntity() == null ||
+			!(event.getEntity() instanceof LivingEntity) ||
+			event.getTarget() == null ||
+			getLivingEntity() == null
+		){
+			return;
+		}
+
+		LivingEntity targeter = (LivingEntity) event.getEntity();
+		LivingEntity target = event.getTarget();
+		UUID myID = getLivingEntity().getUniqueId();
+		UUID targetID = target.getUniqueId();
+
+		if (myID == targetID && shouldTarget(targeter))
+		{
+			if (warningText != null && !warningText.isEmpty())
+				sayToNearbyPlayers(warningText, (int)greetRange);
+
+			timeSinceTargeted = 0;
 		}
 	}
 
@@ -2137,8 +2454,6 @@ public class GuardianTrait extends Trait
 			// TODO: Farewell text perhaps?
 		}
 	}
-
-	public HashMap<UUID, Boolean> needsDropsClear = new HashMap<>();
 
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void whenSomethingMightDie(EntityDamageByEntityEvent event) {

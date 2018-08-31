@@ -36,6 +36,8 @@ permissions:
       guardian.health: true
       # /guardian armor ARMOR
       guardian.armor: true
+      # /guardian targeted_rate RATE
+      guardian.targetedrate: true
       # /guardian attackrate RATE
       guardian.attackrate: true
       # /guardian healrate RATE
