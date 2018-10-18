@@ -1,7 +1,6 @@
 package net.frost_byte.worldguardian.command;
 
 import co.aikar.commands.BaseCommand;
-import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -9,9 +8,7 @@ import com.google.inject.name.Named;
 import net.frost_byte.worldguardian.GuardianTrait;
 import net.frost_byte.worldguardian.WorldGuardianPlugin;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
@@ -25,8 +22,7 @@ import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
 public class GuardianOrderCommand extends BaseCommand
 {
 	@Inject
-	@Named("WorldGuardian")
-	private WorldGuardianPlugin plugin;
+		private WorldGuardianPlugin plugin;
 
 	@Description("Respawn the guardian.")
 	@Subcommand("respawn")
@@ -37,7 +33,7 @@ public class GuardianOrderCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, prefixBad + "Could not find guardian!");
 			return;
 		}
 		Location loc = guardian.spawnPoint == null ? guardian.getNPC().getStoredLocation() : guardian.spawnPoint;
@@ -46,7 +42,7 @@ public class GuardianOrderCommand extends BaseCommand
 			guardian.getNPC().teleport(loc, PlayerTeleportEvent.TeleportCause.COMMAND);
 		}
 
-		sender.sendMessage(prefixGood + "Respawned!");
+		plugin.sendChannelMessage(sender, prefixGood + "Respawned!");
 	}
 
 	@Description("Kill the guardian.")
@@ -58,20 +54,20 @@ public class GuardianOrderCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, prefixBad + "Could not find guardian!");
 			return;
 		}
 
 		if (!guardian.getNPC().isSpawned()) {
-			sender.sendMessage(prefixBad + "NPC is already dead!");
+			plugin.sendChannelMessage(sender, prefixBad + "NPC is already dead!");
 		}
 		else {
 			guardian.getLivingEntity().damage(guardian.health * 2);
-			sender.sendMessage(prefixGood + "Killed!");
+			plugin.sendChannelMessage(sender, prefixGood + "Killed!");
 		}
 		guardian.currentTargets.clear();
 		guardian.chasing = null;
-		sender.sendMessage(prefixGood + "Targets forgiven.");
+		plugin.sendChannelMessage(sender, prefixGood + "Targets forgiven.");
 	}
 
 	@Description("Forgive the guardian's targets to reset its agro.")
@@ -83,12 +79,12 @@ public class GuardianOrderCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, prefixBad + "Could not find guardian!");
 			return;
 		}
 
 		guardian.currentTargets.clear();
 		guardian.chasing = null;
-		sender.sendMessage(prefixGood + "Targets forgiven.");
+		plugin.sendChannelMessage(sender, prefixGood + "Targets forgiven.");
 	}
 }

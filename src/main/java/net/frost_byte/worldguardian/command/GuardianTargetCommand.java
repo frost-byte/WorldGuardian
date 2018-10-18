@@ -23,8 +23,7 @@ import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
 public class GuardianTargetCommand extends BaseCommand
 {
 	@Inject
-	@Named("WorldGuardian")
-	private WorldGuardianPlugin plugin;
+		private WorldGuardianPlugin plugin;
 
 	@Description("Add a target for a guardian")
 	@Syntax("<target>")
@@ -38,11 +37,11 @@ public class GuardianTargetCommand extends BaseCommand
 
 		if (guardian != null && guardian.targets.add(target.getName()))
 		{
-			sender.sendMessage(prefixGood + "Target added!");
+			plugin.sendChannelMessage(sender, prefixGood + "Target added!");
 		}
 		else
 		{
-			sender.sendMessage(prefixBad + "Target already added!");
+			plugin.sendChannelMessage(sender, prefixBad + "Target already added!");
 		}
 	}
 
@@ -73,20 +72,20 @@ public class GuardianTargetCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, ChatColor.RED + "Could not find guardian!");
 			return;
 		}
 
 		if (!guardian.targets.remove(target.getName()))
 		{
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender, 
 				prefixBad +
 				"Not tracking that target!"
 			);
 		}
 		else
 		{
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender, 
 				prefixGood +
 				"No longer tracking that target!"
 			);
@@ -127,20 +126,20 @@ public class GuardianTargetCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, ChatColor.RED + "Could not find guardian!");
 			return;
 		}
 
 		if (guardian.ignores.add(target.getName()))
 		{
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender, 
 				prefixGood +
 				"Target added!"
 			);
 		}
 		else
 		{
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender, 
 				prefixBad +
 				"Target already added!"
 			);
@@ -159,7 +158,7 @@ public class GuardianTargetCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, ChatColor.RED + "Could not find guardian!");
 			return;
 		}
 
@@ -185,20 +184,20 @@ public class GuardianTargetCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, ChatColor.RED + "Could not find guardian!");
 			return;
 		}
 
 		if (!guardian.ignores.remove(target.getName()))
 		{
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender, 
 				prefixBad +
 				"Not tracking that target!"
 			);
 		}
 		else
 		{
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender, 
 				prefixGood +
 				"No longer tracking that target!"
 			);
@@ -217,7 +216,7 @@ public class GuardianTargetCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, ChatColor.RED + "Could not find guardian!");
 			return;
 		}
 

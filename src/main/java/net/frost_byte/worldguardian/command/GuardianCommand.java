@@ -12,7 +12,7 @@ import net.frost_byte.worldguardian.GuardianTrait;
 import net.frost_byte.worldguardian.SentryImport;
 import net.frost_byte.worldguardian.WorldGuardianPlugin;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -21,6 +21,9 @@ import static net.frost_byte.worldguardian.WorldGuardianPlugin.ColorBasic;
 import static net.frost_byte.worldguardian.WorldGuardianPlugin.debugMe;
 import static net.frost_byte.worldguardian.WorldGuardianPlugin.prefixGood;
 import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
+import static org.bukkit.ChatColor.AQUA;
+import static org.bukkit.ChatColor.RED;
+import static org.bukkit.ChatColor.RESET;
 
 @SuppressWarnings("unused")
 @Singleton
@@ -28,8 +31,7 @@ import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
 public class GuardianCommand extends BaseCommand
 {
 	@Inject
-	@Named("WorldGuardian")
-	private WorldGuardianPlugin plugin;
+		private WorldGuardianPlugin plugin;
 
 	@Inject private SentryImport sentryImport;
 
@@ -37,7 +39,7 @@ public class GuardianCommand extends BaseCommand
 	public void doHelp(CommandSender sender, CommandHelp help)
 	{
 		help.showHelp();
-		sender.sendMessage(getValidTargetsMessage());
+		getValidTargetsMessage();
 	}
 
 	@Description("Import NPCs from the Sentry plugin.")
@@ -47,15 +49,16 @@ public class GuardianCommand extends BaseCommand
 	{
 		if (sentryImport == null || Bukkit.getServer().getPluginManager().getPlugin("Sentry") == null)
 		{
-			sender.sendMessage(prefixBad + "Sentry plugin must be installed to perform import!");
+			plugin.sendChannelMessage(sender, prefixBad + "Sentry plugin must be installed to perform import!");
 		}
 		else
 		{
-			sender.sendMessage(prefixGood + "Converting all NPCs from Sentry to Guardian...");
-
 			int imported = sentryImport.PerformImport();
-			sender.sendMessage(prefixGood + "Imported " + imported
-				+ " Sentry NPCs. You may now restart and remove the Sentry plugin.");
+			plugin.sendChannelMessage(
+				sender,
+				prefixGood + "Converting all NPCs from Sentry to Guardian...",
+				prefixGood + "Imported " + imported + " Sentry NPCs. You may now restart and remove the Sentry plugin."
+			);
 		}
 	}
 
@@ -74,7 +77,7 @@ public class GuardianCommand extends BaseCommand
 			{
 				selected.getTrait(GuardianTrait.class).toggleDebugging();
 			}
-			sender.sendMessage(prefixGood + "Toggled debugging for the selected guardian!");
+			plugin.sendChannelMessage(sender, prefixGood + "Toggled debugging for the selected guardian!");
 		}
 	}
 
@@ -87,7 +90,7 @@ public class GuardianCommand extends BaseCommand
 
 		if (sender != null)
 		{
-			sender.sendMessage(prefixGood + "Toggled: " + debugMe + "!");
+			plugin.sendChannelMessage(sender, prefixGood + "Toggled: " + debugMe + "!");
 			debugMe = !debugMe;
 		}
 	}
@@ -101,53 +104,31 @@ public class GuardianCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, RED + "Could not find guardian!");
 			return;
 		}
 
-		sender.sendMessage(
-			prefixGood + ChatColor.RESET + guardian.getNPC().getFullName() + ColorBasic + ": owned by " + ChatColor.RESET
-				+ getOwner(guardian.getNPC()));
-
-		sender.sendMessage(prefixGood + "Targets: " + ChatColor.AQUA + getTargetString(guardian.targets));
-
-		sender.sendMessage(
-			prefixGood + "Player Name Targets: " + ChatColor.AQUA + getNameTargetString(guardian.playerNameTargets));
-
-		sender.sendMessage(
-			prefixGood + "NPC Name Targets: " + ChatColor.AQUA + getNameTargetString(guardian.npcNameTargets));
-
-		sender.sendMessage(
-			prefixGood + "Entity Name Targets: " + ChatColor.AQUA + getNameTargetString(guardian.entityNameTargets));
-
-		sender.sendMessage(
-			prefixGood + "Held Item Targets: " + ChatColor.AQUA + getNameTargetString(guardian.heldItemTargets));
-
-		sender
-			.sendMessage(prefixGood + "Group Targets: " + ChatColor.AQUA + getNameTargetString(guardian.groupTargets));
-
-		sender
-			.sendMessage(prefixGood + "Event Targets: " + ChatColor.AQUA + getNameTargetString(guardian.eventTargets));
-
-		sender
-			.sendMessage(prefixGood + "Other Targets: " + ChatColor.AQUA + getNameTargetString(guardian.otherTargets));
-
-		sender.sendMessage(prefixGood + "Ignored Targets: " + ChatColor.AQUA + getTargetString(guardian.ignores));
-
-		sender.sendMessage(prefixGood + "Ignored Player Name Targets: " + ChatColor.AQUA + getNameTargetString(guardian.playerNameIgnores));
-
-		sender.sendMessage(
-			prefixGood + "Ignored NPC Name Targets: " + ChatColor.AQUA + getNameTargetString(guardian.npcNameIgnores));
-
-		sender.sendMessage(prefixGood + "Ignored Entity Name Targets: " + ChatColor.AQUA + getNameTargetString(guardian.entityNameIgnores));
-
-		sender.sendMessage(prefixGood + "Ignored Held Item Targets: " + ChatColor.AQUA + getNameTargetString(guardian.heldItemIgnores));
-
-		sender.sendMessage(
-			prefixGood + "Ignored Group Targets: " + ChatColor.AQUA + getNameTargetString(guardian.groupIgnores));
-
-		sender.sendMessage(
-			prefixGood + "Ignored Other Targets: " + ChatColor.AQUA + getNameTargetString(guardian.otherIgnores));
+		plugin.sendChannelMessage
+		(
+			sender, 
+			prefixGood + RESET + guardian.getNPC().getFullName() + ColorBasic + ": owned by " + RESET
+				+ getOwner(guardian.getNPC()),
+			prefixGood + "Targets: " + AQUA + getTargetString(guardian.targets),
+			prefixGood + "Player Name Targets: " + AQUA + getNameTargetString(guardian.playerNameTargets),
+			prefixGood + "NPC Name Targets: " + AQUA + getNameTargetString(guardian.npcNameTargets),
+			prefixGood + "Entity Name Targets: " + AQUA + getNameTargetString(guardian.entityNameTargets),
+			prefixGood + "Held Item Targets: " + AQUA + getNameTargetString(guardian.heldItemTargets),
+			prefixGood + "Group Targets: " + AQUA + getNameTargetString(guardian.groupTargets),
+			prefixGood + "Event Targets: " + AQUA + getNameTargetString(guardian.eventTargets),
+			prefixGood + "Other Targets: " + AQUA + getNameTargetString(guardian.otherTargets),
+			prefixGood + "Ignored Targets: " + AQUA + getTargetString(guardian.ignores),
+			prefixGood + "Ignored Player Name Targets: " + AQUA + getNameTargetString(guardian.playerNameIgnores),
+			prefixGood + "Ignored NPC Name Targets: " + AQUA + getNameTargetString(guardian.npcNameIgnores),
+			prefixGood + "Ignored Entity Name Targets: " + AQUA + getNameTargetString(guardian.entityNameIgnores),
+			prefixGood + "Ignored Held Item Targets: " + AQUA + getNameTargetString(guardian.heldItemIgnores),
+			prefixGood + "Ignored Group Targets: " + AQUA + getNameTargetString(guardian.groupIgnores),
+			prefixGood + "Ignored Other Targets: " + AQUA + getNameTargetString(guardian.otherIgnores)
+		);
 	}
 
 	@Description("Get information about the guardian.")
@@ -159,39 +140,38 @@ public class GuardianCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, RED + "Could not find guardian!");
 			return;
 		}
-
-		sender.sendMessage(
-			prefixGood + ChatColor.RESET + guardian.getNPC().getFullName() +
-			ColorBasic + ": owned by " + ChatColor.RESET + getOwner(guardian.getNPC()) +
-			(guardian.getGuarding() == null ? "" : ColorBasic + ", guarding: " +
-			ChatColor.RESET + Bukkit.getOfflinePlayer(guardian.getGuarding()).getName())
+		plugin.sendChannelMessage
+		(
+			sender,
+			prefixGood + RESET + guardian.getNPC().getFullName() + ColorBasic + ": owned by " + RESET +
+				getOwner(guardian.getNPC()) + (guardian.getGuarding() == null ? "" : ColorBasic + ", guarding: " +
+				RESET + Bukkit.getOfflinePlayer(guardian.getGuarding()).getName()),
+			prefixGood + guardian.getInventoryInfo(),
+			prefixGood + "Damage: " + AQUA + guardian.damage,
+			prefixGood + "Armor: " + AQUA + guardian.armor,
+			prefixGood + "Health: " + AQUA + (guardian.getNPC().isSpawned() ? guardian.getLivingEntity().getHealth() + "/" :
+				"") + guardian.health,
+			prefixGood + "Range: " + AQUA + guardian.range,
+			prefixGood + "Attack Rate: " + AQUA + guardian.attackRate,
+			prefixGood + "Ranged Attack Rate: " + AQUA + guardian.attackRateRanged,
+			prefixGood + "Heal Rate: " + AQUA + guardian.healRate,
+			prefixGood + "Respawn Time: " + AQUA + guardian.respawnTime,
+			prefixGood + "Accuracy: " + AQUA + guardian.accuracy,
+			prefixGood + "Reach: " + AQUA + guardian.reach,
+			prefixGood + "Invincibility Enabled: " + AQUA + guardian.invincible,
+			prefixGood + "Fightback Enabled: " + AQUA + guardian.fightback,
+			prefixGood + "Ranged Chasing Enabled: " + AQUA + guardian.rangedChase,
+			prefixGood + "Close-Quarters Chasing Enabled: " + AQUA + guardian.closeChase,
+			prefixGood + "Maximum chase range: " + AQUA + guardian.chaseRange,
+			prefixGood + "Safe-Shot Enabled: " + AQUA + guardian.safeShot,
+			prefixGood + "Enemy-Drops Enabled: " + AQUA + guardian.enemyDrops,
+			prefixGood + "Autoswitch Enabled: " + AQUA + guardian.autoswitch,
+			prefixGood + "Realistic Targetting Enabled: " + AQUA + guardian.realistic,
+			prefixGood + "Squad: " + AQUA + (guardian.squad == null ? "None" : guardian.squad)
 		);
-		sender.sendMessage(prefixGood + guardian.getInventoryInfo());
-		sender.sendMessage(prefixGood + "Damage: " + ChatColor.AQUA + guardian.damage);
-		sender.sendMessage(prefixGood + "Armor: " + ChatColor.AQUA + guardian.armor);
-		sender.sendMessage(prefixGood + "Health: " + ChatColor.AQUA + (guardian.getNPC().isSpawned() ?
-			guardian.getLivingEntity().getHealth() + "/" :
-			"") + guardian.health);
-		sender.sendMessage(prefixGood + "Range: " + ChatColor.AQUA + guardian.range);
-		sender.sendMessage(prefixGood + "Attack Rate: " + ChatColor.AQUA + guardian.attackRate);
-		sender.sendMessage(prefixGood + "Ranged Attack Rate: " + ChatColor.AQUA + guardian.attackRateRanged);
-		sender.sendMessage(prefixGood + "Heal Rate: " + ChatColor.AQUA + guardian.healRate);
-		sender.sendMessage(prefixGood + "Respawn Time: " + ChatColor.AQUA + guardian.respawnTime);
-		sender.sendMessage(prefixGood + "Accuracy: " + ChatColor.AQUA + guardian.accuracy);
-		sender.sendMessage(prefixGood + "Reach: " + ChatColor.AQUA + guardian.reach);
-		sender.sendMessage(prefixGood + "Invincibility Enabled: " + ChatColor.AQUA + guardian.invincible);
-		sender.sendMessage(prefixGood + "Fightback Enabled: " + ChatColor.AQUA + guardian.fightback);
-		sender.sendMessage(prefixGood + "Ranged Chasing Enabled: " + ChatColor.AQUA + guardian.rangedChase);
-		sender.sendMessage(prefixGood + "Close-Quarters Chasing Enabled: " + ChatColor.AQUA + guardian.closeChase);
-		sender.sendMessage(prefixGood + "Maximum chase range: " + ChatColor.AQUA + guardian.chaseRange);
-		sender.sendMessage(prefixGood + "Safe-Shot Enabled: " + ChatColor.AQUA + guardian.safeShot);
-		sender.sendMessage(prefixGood + "Enemy-Drops Enabled: " + ChatColor.AQUA + guardian.enemyDrops);
-		sender.sendMessage(prefixGood + "Autoswitch Enabled: " + ChatColor.AQUA + guardian.autoswitch);
-		sender.sendMessage(prefixGood + "Realistic Targetting Enabled: " + ChatColor.AQUA + guardian.realistic);
-		sender.sendMessage(prefixGood + "Squad: " + ChatColor.AQUA + (guardian.squad == null ? "None" : guardian.squad));
 	}
 
 	@Description("View stats for the guardian.")
@@ -203,24 +183,27 @@ public class GuardianCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender,RED + "Could not find guardian!");
 			return;
 		}
 
-		sender.sendMessage(
-			prefixGood + ChatColor.RESET + guardian.getNPC().getFullName() + ColorBasic + ": owned by " + ChatColor.RESET
-				+ getOwner(guardian.getNPC()));
-		sender.sendMessage(prefixGood + "Arrows fired: " + ChatColor.AQUA + guardian.stats_arrowsFired);
-		sender.sendMessage(prefixGood + "Potions thrown: " + ChatColor.AQUA + guardian.stats_potionsThrown);
-		sender.sendMessage(prefixGood + "Fireballs launched: " + ChatColor.AQUA + guardian.stats_fireballsFired);
-		sender.sendMessage(prefixGood + "Snowballs thrown: " + ChatColor.AQUA + guardian.stats_snowballsThrown);
-		sender.sendMessage(prefixGood + "Eggs thrown: " + ChatColor.AQUA + guardian.stats_eggsThrown);
-		sender.sendMessage(prefixGood + "Pearls used: " + ChatColor.AQUA + guardian.stats_pearlsUsed);
-		sender.sendMessage(prefixGood + "Skulls thrown: " + ChatColor.AQUA + guardian.stats_skullsThrown);
-		sender.sendMessage(prefixGood + "Punches: " + ChatColor.AQUA + guardian.stats_punches);
-		sender.sendMessage(prefixGood + "Times spawned: " + ChatColor.AQUA + guardian.stats_timesSpawned);
-		sender.sendMessage(prefixGood + "Damage Given: " + ChatColor.AQUA + guardian.stats_damageGiven);
-		sender.sendMessage(prefixGood + "Damage Taken: " + ChatColor.AQUA + guardian.stats_damageTaken);
-		sender.sendMessage(prefixGood + "Minutes spawned: " + ChatColor.AQUA + guardian.stats_ticksSpawned / (20.0 * 60.0));
+		plugin.sendChannelMessage
+		(
+			sender,
+			prefixGood + RESET + guardian.getNPC().getFullName() + ColorBasic + ": owned by " + RESET
+				+ getOwner(guardian.getNPC()),
+			prefixGood + "Arrows fired: " + AQUA + guardian.stats_arrowsFired,
+			prefixGood + "Potions thrown: " + AQUA + guardian.stats_potionsThrown,
+			prefixGood + "Fireballs launched: " + AQUA + guardian.stats_fireballsFired,
+			prefixGood + "Snowballs thrown: " + AQUA + guardian.stats_snowballsThrown,
+			prefixGood + "Eggs thrown: " + AQUA + guardian.stats_eggsThrown,
+			prefixGood + "Pearls used: " + AQUA + guardian.stats_pearlsUsed,
+			prefixGood + "Skulls thrown: " + AQUA + guardian.stats_skullsThrown,
+			prefixGood + "Punches: " + AQUA + guardian.stats_punches,
+			prefixGood + "Times spawned: " + AQUA + guardian.stats_timesSpawned,
+			prefixGood + "Damage Given: " + AQUA + guardian.stats_damageGiven,
+			prefixGood + "Damage Taken: " + AQUA + guardian.stats_damageTaken,
+			prefixGood + "Minutes spawned: " + AQUA + guardian.stats_ticksSpawned / (20.0 * 60.0)
+		);
 	}
 }

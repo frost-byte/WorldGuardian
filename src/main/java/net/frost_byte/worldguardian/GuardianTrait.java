@@ -1,7 +1,7 @@
 package net.frost_byte.worldguardian;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
+
 import com.google.inject.throwingproviders.CheckedProvider;
 import me.lucko.luckperms.api.LuckPermsApi;
 import net.citizensnpcs.api.CitizensAPI;
@@ -9,6 +9,7 @@ import net.citizensnpcs.api.ai.EntityTarget;
 import net.citizensnpcs.api.ai.TargetType;
 import net.citizensnpcs.api.ai.TeleportStuckAction;
 import net.citizensnpcs.api.ai.speech.SpeechContext;
+import net.citizensnpcs.api.ai.speech.SpeechController;
 import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.persistence.Persist;
@@ -46,6 +47,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static net.citizensnpcs.Settings.Setting.CHAT_FORMAT_TO_TARGET;
 import static net.frost_byte.worldguardian.WorldGuardianPlugin.*;
 import static net.frost_byte.worldguardian.utility.GuardianTargetType.*;
 import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
@@ -88,7 +90,6 @@ public class GuardianTrait extends Trait
 	}
 
 	@Inject
-	@Named("WorldGuardian")
 	private WorldGuardianPlugin plugin;
 
 	@Inject
@@ -2314,9 +2315,17 @@ public class GuardianTrait extends Trait
 		}
 	}
 
+	// TODO: Should this use the Citizens DefaultSpeechController when
+	// TabChannels isn't loaded?
 	public void sayTo(Player player, String message) {
 		SpeechContext sc = new SpeechContext(npc, message, player);
-		npc.getDefaultSpeechController().speak(sc, "chat");
+		//sc.getMessage()
+		SpeechController controller = npc.getDefaultSpeechController();
+		String text = ChatColor.GREEN + CHAT_FORMAT_TO_TARGET.asString()
+			.replace("<npc>", npc.getName())
+			.replace("<text>", sc.getMessage());
+		plugin.sendChannelMessage(player, text);
+		//npc.getDefaultSpeechController().speak(sc, "chat");
 	}
 
 	public void sayToNearbyPlayers(String message, int distance)

@@ -27,8 +27,7 @@ public class SentryImport implements Listener {
 
 	@Inject
 	public SentryImport(
-		@Named("WorldGuardian")
-		WorldGuardianPlugin plugin
+				WorldGuardianPlugin plugin
 	){
 		this.plugin = plugin;
 	}

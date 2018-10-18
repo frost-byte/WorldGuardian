@@ -89,6 +89,14 @@
             <version>4.2.0</version>
         </dependency>
 
+        <!--TabChannels-->
+        <dependency>
+            <groupId>com.github.games647</groupId>
+            <artifactId>tabchannels</artifactId>
+            <version>0.4</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Annotation Command Framework -->
         <dependency>
             <groupId>co.aikar</groupId>

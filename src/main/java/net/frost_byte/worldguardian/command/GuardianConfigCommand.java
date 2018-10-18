@@ -10,7 +10,7 @@ import net.frost_byte.worldguardian.GuardianTrait;
 import net.frost_byte.worldguardian.WorldGuardianPlugin;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -25,8 +25,7 @@ import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
 public class GuardianConfigCommand extends BaseCommand
 {
 	@Inject
-	@Named("WorldGuardian")
-	private WorldGuardianPlugin plugin;
+		private WorldGuardianPlugin plugin;
 
 	@Description("Adjust the range for a guardian")
 	@Syntax("<range> The tracking range for the guardian (1-200)")
@@ -39,7 +38,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -47,7 +46,7 @@ public class GuardianConfigCommand extends BaseCommand
 		{
 			if (range > 0 && range < 200) {
 				guardian.range = range;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Range set!"
 				);
@@ -59,7 +58,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid range number: " + ex.getMessage()
 			);
@@ -77,7 +76,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -85,7 +84,7 @@ public class GuardianConfigCommand extends BaseCommand
 		{
 			if (damage >= -1 && damage < 1000) {
 				guardian.damage = damage;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Damage set!"
 				);
@@ -97,7 +96,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid damage number: " + ex.getMessage()
 			);
@@ -115,7 +114,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -123,7 +122,7 @@ public class GuardianConfigCommand extends BaseCommand
 		{
 			if (speed >= 0 && speed < 1000) {
 				guardian.speed = speed;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Speed set!"
 				);
@@ -135,7 +134,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid speed number: " + ex.getMessage()
 			);
@@ -153,7 +152,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -161,7 +160,7 @@ public class GuardianConfigCommand extends BaseCommand
 		{
 			if (range > 0 && range < 100) {
 				guardian.greetRange = range;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Range set!"
 				);
@@ -173,7 +172,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid range number: " + ex.getMessage()
 			);
@@ -191,7 +190,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -199,7 +198,7 @@ public class GuardianConfigCommand extends BaseCommand
 		{
 			if (armor >= -1 && armor <= 1) {
 				guardian.armor = armor;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Armor set!"
 				);
@@ -211,7 +210,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid armor number: " + ex.getMessage()
 			);
@@ -229,7 +228,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -237,7 +236,7 @@ public class GuardianConfigCommand extends BaseCommand
 		{
 			if (health >= healthMin && health <= plugin.maxHealth) {
 				guardian.setHealth(health);
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Health set!"
 				);
@@ -249,7 +248,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid health number: " + ex.getMessage()
 			);
@@ -267,7 +266,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -277,7 +276,7 @@ public class GuardianConfigCommand extends BaseCommand
 			if ((d >= plugin.tickRate && d <= healRateMax) || d == 0)
 			{
 				guardian.healRate = d;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Heal rate set!"
 				);
@@ -289,7 +288,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid heal rate number: " + ex.getMessage()
 			);
@@ -308,7 +307,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -317,7 +316,7 @@ public class GuardianConfigCommand extends BaseCommand
 			if (d >= plugin.tickRate && d <= targetedRateMax)
 			{
 				guardian.targetedRate = d;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 						"Targeted rate set!"
 				);
@@ -329,7 +328,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 					"Invalid targeted rate number: " + ex.getMessage()
 			);
@@ -348,7 +347,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -359,7 +358,7 @@ public class GuardianConfigCommand extends BaseCommand
 				if (ranged != null && ranged.equalsIgnoreCase("ranged"))
 				{
 					guardian.attackRateRanged = d;
-					player.sendMessage(
+					plugin.sendChannelMessage(player, 
 						prefixGood +
 						"Ranged attack rate set!"
 					);
@@ -367,7 +366,7 @@ public class GuardianConfigCommand extends BaseCommand
 				else
 				{
 					guardian.attackRate = d;
-					player.sendMessage(
+					plugin.sendChannelMessage(player, 
 						prefixGood +
 						"Attack rate set!"
 					);
@@ -380,7 +379,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid attack rate number: " + ex.getMessage()
 			);
@@ -398,7 +397,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -408,7 +407,7 @@ public class GuardianConfigCommand extends BaseCommand
 			if (ticks >= 0)
 			{
 				guardian.enemyTargetTime = (int)(ticks * 20);
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Target time set!"
 				);
@@ -420,7 +419,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid time number: " + ex.getMessage()
 			);
@@ -438,7 +437,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -447,7 +446,7 @@ public class GuardianConfigCommand extends BaseCommand
 			if (ticks >= 0)
 			{
 				guardian.respawnTime = (int)(ticks * 20);
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Respawn time set!"
 				);
@@ -459,7 +458,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 					prefixBad +
 							"Invalid time number: " + ex.getMessage()
 			);
@@ -477,7 +476,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -485,7 +484,7 @@ public class GuardianConfigCommand extends BaseCommand
 		{
 			if (range > 0 && range < 100) {
 				guardian.chaseRange = range;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Chase range set!"
 				);
@@ -497,7 +496,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid range number: " + ex.getMessage()
 			);
@@ -515,7 +514,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -523,7 +522,7 @@ public class GuardianConfigCommand extends BaseCommand
 		{
 			if (accuracy >= 0 && accuracy < 1000) {
 				guardian.accuracy = accuracy;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Accuracy offset set!"
 				);
@@ -535,7 +534,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid accuracy offset number: " + ex.getMessage()
 			);
@@ -553,7 +552,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -561,7 +560,7 @@ public class GuardianConfigCommand extends BaseCommand
 		{
 			if (reach >= 0 && reach <= 50) {
 				guardian.reach = reach;
-				player.sendMessage(
+				plugin.sendChannelMessage(player, 
 					prefixGood +
 					"Reach set!"
 				);
@@ -573,7 +572,7 @@ public class GuardianConfigCommand extends BaseCommand
 		}
 		catch (NumberFormatException ex)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixBad +
 				"Invalid reach number: " + ex.getMessage()
 			);
@@ -590,7 +589,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -598,14 +597,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.invincible)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now invincible!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC no longer invincible!"
 			);
@@ -622,7 +621,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -630,14 +629,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.autoswitch)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now automatically switches items!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC no longer automatically switches items!"
 			);
@@ -654,7 +653,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -662,14 +661,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.realistic)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now realistically targets enemies!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC no longer realistically targets enemies!"
 			);
@@ -686,7 +685,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -694,14 +693,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.fightback)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now fights back!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC no longer fights back!"
 			);
@@ -718,7 +717,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -726,14 +725,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.needsAmmo)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now needs ammo!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC no longer needs ammo!"
 			);
@@ -750,7 +749,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -758,14 +757,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.safeShot)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now is a safe shot!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC is no longer a safe shot!"
 			);
@@ -782,7 +781,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -790,14 +789,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.closeChase)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now chases nearby enemies!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC no longer chases nearby enemies!"
 			);
@@ -814,7 +813,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -822,14 +821,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.rangedChase)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now chases ranged enemies!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC no longer chases ranged enemies!"
 			);
@@ -846,7 +845,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -857,14 +856,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.getGuarding() == null)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now guarding its area!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC now guarding that player!"
 			);
@@ -880,7 +879,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -905,7 +904,7 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			player.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(player, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -913,14 +912,14 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian.enemyDrops)
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC enemy mobs now drop items and XP!"
 			);
 		}
 		else
 		{
-			player.sendMessage(
+			plugin.sendChannelMessage(player, 
 				prefixGood +
 				"NPC enemy mobs no longer drop items and XP!"
 			);
@@ -937,13 +936,13 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, prefixBad + "Could not find guardian!");
 			return;
 		}
 
 		guardian.greetingText = greeting;
 
-		sender.sendMessage(prefixGood + "Set!");
+		plugin.sendChannelMessage(sender, prefixGood + "Set!");
 	}
 
 	@Description("Add a message to the list of the guardian's farewells.")
@@ -956,13 +955,13 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, prefixBad + "Could not find guardian!");
 			return;
 		}
 
 		guardian.farewell.add(message);
 
-		sender.sendMessage(prefixGood + "Farewell added!");
+		plugin.sendChannelMessage(sender, prefixGood + "Farewell added!");
 	}
 
 	@Description("Add a message to the guardian's dialogue.")
@@ -975,13 +974,13 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, prefixBad + "Could not find guardian!");
 			return;
 		}
 
 		guardian.dialogue.add(message);
 
-		sender.sendMessage(prefixGood + "Dialogue added!");
+		plugin.sendChannelMessage(sender, prefixGood + "Dialogue added!");
 	}
 
 	@Description("Set the guardian's warning.")
@@ -994,13 +993,13 @@ public class GuardianConfigCommand extends BaseCommand
 
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, prefixBad + "Could not find guardian!");
 			return;
 		}
 
 		guardian.warningText = warning;
 
-		sender.sendMessage(prefixGood + "Set!");
+		plugin.sendChannelMessage(sender, prefixGood + "Set!");
 	}
 
 	@Description("Set the guardian's squad.")
@@ -1013,7 +1012,7 @@ public class GuardianConfigCommand extends BaseCommand
 	
 		if (guardian == null)
 		{
-			sender.sendMessage(ChatColor.RED + "Could not find guardian!");
+			plugin.sendChannelMessage(sender, prefixBad + "Could not find guardian!");
 			return;
 		}
 
@@ -1022,6 +1021,6 @@ public class GuardianConfigCommand extends BaseCommand
 			guardian.squad = null;
 		}
 
-		sender.sendMessage(prefixGood + "Set!");
+		plugin.sendChannelMessage(sender, prefixGood + "Set!");
 	}
 }

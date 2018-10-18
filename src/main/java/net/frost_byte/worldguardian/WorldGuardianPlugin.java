@@ -1,6 +1,7 @@
 package net.frost_byte.worldguardian;
 
 import co.aikar.commands.BukkitCommandManager;
+import com.google.common.collect.Lists;
 import com.google.inject.Injector;
 
 import me.lucko.luckperms.api.LuckPermsApi;
@@ -16,6 +17,9 @@ import net.frost_byte.worldguardian.utility.ProjectUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
+import com.github.games647.tabchannels.TabChannelsManager;
+
+import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -23,7 +27,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 @SuppressWarnings({ "FieldCanBeLocal", "WeakerAccess", "unused" })
 public class WorldGuardianPlugin extends JavaPlugin implements Listener
@@ -42,6 +48,8 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 	 * @see co.aikar.commands.CommandManager
 	 */
 	private BukkitCommandManager commandManager;
+
+	private TabChannelsManager channelsManager;
 
 	public static final String ColorBasic = ChatColor.YELLOW.toString();
 
@@ -74,6 +82,33 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 
 	}
 
+	public void sendChannelMessage(Player player, String... messages)
+	{
+		if (player == null || !player.isOnline() || messages == null || messages.length == 0)
+			return;
+
+		List<String> msgList = Arrays.asList(messages);
+		UUID pid = player.getUniqueId();
+
+		if (channelsManager != null)
+			msgList.forEach(m -> channelsManager.sendMessage(m, "global", pid));
+		else
+			player.sendMessage(messages);
+	}
+
+	public void broadcastChannelMessage(String... messages)
+	{
+		if (messages == null || messages.length == 0)
+			return;
+
+		List<String> msgList = Arrays.asList(messages);
+
+		if (channelsManager != null)
+			msgList.forEach(m -> channelsManager.broadcastMessage(m, "global"));
+		else
+			msgList.forEach(Bukkit::broadcastMessage);
+	}
+
 	/**
 	 * The plugin has been activated and enabled by Bukkit.
 	 * This is the entry point for the plugin.
@@ -100,9 +135,20 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 		*/
 		LuckPermsApi permsApi = provider.getProvider();
 
+		/*
+			The TabChannels instance for sending chat
+			to different tab channels.
+		 */
+		RegisteredServiceProvider<TabChannelsManager> channelsProvider = Bukkit
+			.getServicesManager()
+			.getRegistration(TabChannelsManager.class);
+
+		channelsManager = channelsProvider.getProvider();
+
 		// Create the Guice Injection module and configure its bindings
 		PluginBinderModule module = new PluginBinderModule(
 			this,
+			channelsManager,
 			commandManager,
 			permsApi,
 			getDataFolder(),

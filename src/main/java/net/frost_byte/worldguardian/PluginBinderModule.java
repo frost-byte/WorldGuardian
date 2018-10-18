@@ -1,6 +1,7 @@
 package net.frost_byte.worldguardian;
 
-import com.google.common.base.Preconditions;
+import com.github.games647.tabchannels.TabChannelsManager;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -15,6 +16,8 @@ import net.frost_byte.worldguardian.utility.GuardianTargetUtil;
 
 import java.io.File;
 import java.util.logging.Logger;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Implementation of a Guice AbstractModule for handling
@@ -31,6 +34,11 @@ import java.util.logging.Logger;
 	 * The ACF Bukkit Command Manager
 	 */
 	private final BukkitCommandManager commandManager;
+
+	/**
+	 * The TabChannels Plugin API
+	 */
+	private final TabChannelsManager channelsManager;
 
 	/**
 	 * The LuckPerms API
@@ -51,33 +59,38 @@ import java.util.logging.Logger;
 	 * Binds Instances of Objects that cannot be modified to use
 	 * Guice's Dependency Injection
 	 *
-	 * @param plugin         The WorldGuardian plugin
-	 * @param commandManager The ACF Bukkit Command Manager
-	 * @param permsApi       The LuckPerms API instance
-	 * @param dataFolder     The Plugin's Data Folder
-	 * @param logger         The Plugin's Logger
+	 * @param plugin          The WorldGuardian plugin
+	 * @param channelsManager The TabChannels plugin
+	 * @param commandManager  The ACF Bukkit Command Manager
+	 * @param permsApi        The LuckPerms API instance
+	 * @param dataFolder      The Plugin's Data Folder
+	 * @param logger          The Plugin's Logger
 	 */
 	public PluginBinderModule(
 			WorldGuardianPlugin plugin,
+			TabChannelsManager channelsManager,
 			BukkitCommandManager commandManager,
 			LuckPermsApi permsApi,
 			File dataFolder,
 			Logger logger
 	)
 	{
-		this.plugin = Preconditions.checkNotNull(plugin,
+		this.plugin = checkNotNull(plugin,
 				"The plugin instance cannot be null");
 		GuardianTargetUtil.setPlugin(plugin);
-		this.commandManager = Preconditions.checkNotNull(commandManager,
+
+		this.channelsManager = channelsManager;
+
+		this.commandManager = checkNotNull(commandManager,
 				"The ACF API cannot be null");
 
-		this.permsApi = Preconditions.checkNotNull(permsApi,
+		this.permsApi = checkNotNull(permsApi,
 				"The luck perms API cannot be null");
 
-		this.dataFolder = Preconditions.checkNotNull(dataFolder,
+		this.dataFolder = checkNotNull(dataFolder,
 				"The plugin data folder cannot be null");
 
-		this.logger = Preconditions.checkNotNull(logger,
+		this.logger = checkNotNull(logger,
 				"The logger instance cannot be null");
 	}
 
@@ -101,8 +114,10 @@ import java.util.logging.Logger;
 	protected void configure()
 	{
 		bind(WorldGuardianPlugin.class)
-			.annotatedWith(Names.named("WorldGuardian"))
 			.toInstance(plugin);
+
+		if(channelsManager != null)
+			bind(TabChannelsManager.class).toInstance(channelsManager);
 
 		bind(BukkitCommandManager.class).toInstance(commandManager);
 		bind(LuckPermsApi.class).toInstance(permsApi);
@@ -129,8 +144,7 @@ import java.util.logging.Logger;
 	@SuppressWarnings("unused")
 	@Provides
 	public GuardianTrait provideGuardianTrait(
-		@Named("WorldGuardian")
-		WorldGuardianPlugin plugin,
+				WorldGuardianPlugin plugin,
 		LuckPermsApi luckPermsApi)
 	{
 		GuardianTrait guardian = new GuardianTrait();

@@ -2,7 +2,7 @@ name: WorldGuardian
 authors: ['frost-byte']
 version: ${project.version} (build ${BUILD_NUMBER})
 main: net.frost_byte.worldguardian.WorldGuardianPlugin
-depend: [Citizens]
+depend: [Citizens,TabChannels]
 softdepend: [LuckPerms]
 
 api-version: 1.13

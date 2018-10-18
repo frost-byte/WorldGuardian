@@ -2,6 +2,7 @@ package net.frost_byte.worldguardian.utility;
 
 import com.google.inject.Inject;
 import net.frost_byte.worldguardian.GuardianTrait;
+import net.frost_byte.worldguardian.WorldGuardianPlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -26,10 +27,17 @@ public enum GuardianTargetCategory
 	private String searchType;
 
 	@Inject
+	private WorldGuardianPlugin plugin;
+
 	GuardianTargetCategory(String categoryName, String searchType)
 	{
 		this.categoryName = categoryName;
 		this.searchType = searchType;
+	}
+
+	public WorldGuardianPlugin getPlugin()
+	{
+		return plugin;
 	}
 
 	public String getCategoryName() { return categoryName; }
@@ -63,8 +71,9 @@ public enum GuardianTargetCategory
 				guardian.getName(),
 				searchString
 			);
-			getPlugin().getLogger().info("GuardianTargetCategory.addTarget: " + debugInfo);
+			category.getPlugin().getLogger().info("GuardianTargetCategory.addTarget: " + debugInfo);
 		}
+		WorldGuardianPlugin plugin = category.getPlugin();
 
 		switch (category)
 		{
@@ -83,7 +92,7 @@ public enum GuardianTargetCategory
 			case GROUP_NAME:
 				if (guardian.groupTargets.contains(searchString))
 				{
-					sender.sendMessage(
+					plugin.sendChannelMessage(sender,
 						prefixBad +
 						"Already tracking that name target!"
 					);
@@ -91,7 +100,7 @@ public enum GuardianTargetCategory
 				else
 				{
 					guardian.groupTargets.add(searchString);
-					sender.sendMessage(
+					plugin.sendChannelMessage(sender,
 						prefixGood +
 						"Tracking new target!"
 					);
@@ -114,7 +123,7 @@ public enum GuardianTargetCategory
 		}
 		catch (Exception e) {
 			names = null;
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender,
 				prefixBad +
 				"Bad regular expression!"
 			);
@@ -123,7 +132,7 @@ public enum GuardianTargetCategory
 		if (names != null) {
 
 			if (names.contains(searchString)) {
-				sender.sendMessage(
+				plugin.sendChannelMessage(sender,
 					prefixBad +
 					"Already tracking that target!"
 				);
@@ -131,7 +140,7 @@ public enum GuardianTargetCategory
 			else
 			{
 				names.add(searchString);
-				sender.sendMessage(
+				plugin.sendChannelMessage(sender,
 					prefixGood +
 					"Tracking new target!"
 				);
@@ -139,12 +148,12 @@ public enum GuardianTargetCategory
 		}
 		else
 		{
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender,
 				prefixBad +
 				"Invalid target!"
 			);
 
-			sender.sendMessage(getValidTargetsMessage());
+			plugin.sendChannelMessage(sender, getValidTargetsMessage());
 		}
 	}
 
@@ -160,6 +169,7 @@ public enum GuardianTargetCategory
 		boolean doRegex = true;
 		searchString = ChatColor.translateAlternateColorCodes('&', searchString);
 
+		WorldGuardianPlugin plugin = category.getPlugin();
 		switch (category)
 		{
 			case PLAYER:
@@ -177,7 +187,7 @@ public enum GuardianTargetCategory
 			case GROUP_NAME:
 				if (guardian.groupTargets.contains(searchString))
 				{
-					sender.sendMessage(
+					plugin.sendChannelMessage(sender,
 						prefixBad +
 						"Already tracking that name target!"
 					);
@@ -185,7 +195,7 @@ public enum GuardianTargetCategory
 				else
 				{
 					guardian.groupTargets.add(searchString);
-					sender.sendMessage(
+					plugin.sendChannelMessage(sender,
 						prefixGood +
 						"Tracking new target!"
 					);
@@ -208,7 +218,7 @@ public enum GuardianTargetCategory
 		}
 		catch (Exception e) {
 			names = null;
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender,
 				prefixBad +
 				"Bad regular expression!"
 			);
@@ -217,7 +227,7 @@ public enum GuardianTargetCategory
 		if (names != null) {
 
 			if (!names.remove(searchString)) {
-				sender.sendMessage(
+				plugin.sendChannelMessage(sender,
 					prefixBad +
 					"Not tracking that target!"
 				);
@@ -225,7 +235,7 @@ public enum GuardianTargetCategory
 			else
 			{
 				names.add(searchString);
-				sender.sendMessage(
+				plugin.sendChannelMessage(sender,
 					prefixGood +
 					"No longer tracking that target!"
 				);
@@ -233,13 +243,10 @@ public enum GuardianTargetCategory
 		}
 		else
 		{
-			sender.sendMessage(
-				prefixBad +
-				"Invalid target!"
-			);
-			sender.sendMessage(
-				prefixGood +
-				"See /guardian to view valid targets!"
+			plugin.sendChannelMessage(
+				sender,
+				prefixBad + "Invalid target!",
+				prefixGood + "See /guardian to view valid targets!"
 			);
 		}
 	}
@@ -256,6 +263,7 @@ public enum GuardianTargetCategory
 		boolean doRegex = true;
 		searchString = ChatColor.translateAlternateColorCodes('&', searchString);
 
+		WorldGuardianPlugin plugin = category.getPlugin();
 		switch (category)
 		{
 			case PLAYER:
@@ -273,7 +281,7 @@ public enum GuardianTargetCategory
 			case GROUP_NAME:
 				if (guardian.groupIgnores.contains(searchString))
 				{
-					sender.sendMessage(
+					plugin.sendChannelMessage(sender,
 						prefixBad +
 						"Already ignoring that name target!"
 					);
@@ -281,7 +289,7 @@ public enum GuardianTargetCategory
 				else
 				{
 					guardian.groupIgnores.add(searchString);
-					sender.sendMessage(
+					plugin.sendChannelMessage(sender,
 						prefixGood +
 						"Ignoring new target!"
 					);
@@ -303,7 +311,7 @@ public enum GuardianTargetCategory
 		}
 		catch (Exception e) {
 			names = null;
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender,
 				prefixBad +
 				"Bad regular expression!"
 			);
@@ -312,7 +320,7 @@ public enum GuardianTargetCategory
 		if (names != null) {
 
 			if (names.contains(searchString)) {
-				sender.sendMessage(
+				plugin.sendChannelMessage(sender,
 					prefixBad +
 					"Already ignoring that target!"
 				);
@@ -320,7 +328,7 @@ public enum GuardianTargetCategory
 			else
 			{
 				names.add(searchString);
-				sender.sendMessage(
+				plugin.sendChannelMessage(sender,
 					prefixGood +
 					"Ignoring new target!"
 				);
@@ -328,14 +336,10 @@ public enum GuardianTargetCategory
 		}
 		else
 		{
-			sender.sendMessage(
-				prefixBad +
-				"Invalid ignore target!"
-			);
-
-			sender.sendMessage(
-				prefixGood +
-				"See /guardian to view valid targets!"
+			plugin.sendChannelMessage(
+				sender,
+				prefixBad + "Invalid ignore target!",
+				prefixGood + "See /guardian to view valid targets!"
 			);
 		}
 	}
@@ -351,6 +355,8 @@ public enum GuardianTargetCategory
 		List<String> names = null;
 		boolean doRegex = true;
 		searchString = ChatColor.translateAlternateColorCodes('&', searchString);
+
+		WorldGuardianPlugin plugin = category.getPlugin();
 
 		switch (category)
 		{
@@ -369,7 +375,7 @@ public enum GuardianTargetCategory
 			case GROUP_NAME:
 				if (guardian.groupIgnores.contains(searchString))
 				{
-					sender.sendMessage(
+					plugin.sendChannelMessage(sender,
 							prefixBad +
 									"Already tracking that name target!"
 					);
@@ -377,7 +383,7 @@ public enum GuardianTargetCategory
 				else
 				{
 					guardian.groupIgnores.add(searchString);
-					sender.sendMessage(
+					plugin.sendChannelMessage(sender,
 							prefixGood +
 									"Tracking new target!"
 					);
@@ -399,7 +405,7 @@ public enum GuardianTargetCategory
 		}
 		catch (Exception e) {
 			names = null;
-			sender.sendMessage(
+			plugin.sendChannelMessage(sender,
 				prefixBad +
 				"Bad regular expression!"
 			);
@@ -408,7 +414,7 @@ public enum GuardianTargetCategory
 		if (names != null) {
 
 			if (!names.remove(searchString)) {
-				sender.sendMessage(
+				plugin.sendChannelMessage(sender,
 					prefixBad +
 					"Not ignoring that target!"
 				);
@@ -416,7 +422,7 @@ public enum GuardianTargetCategory
 			else
 			{
 				names.add(searchString);
-				sender.sendMessage(
+				plugin.sendChannelMessage(sender,
 					prefixGood +
 					"No longer ignoring that target!"
 				);
@@ -424,13 +430,10 @@ public enum GuardianTargetCategory
 		}
 		else
 		{
-			sender.sendMessage(
-				prefixBad +
-				"Invalid ignore target!"
-			);
-			sender.sendMessage(
-				prefixGood +
-				"See /guardian to view valid targets!"
+			plugin.sendChannelMessage(
+				sender,
+				prefixBad + "Invalid ignore target!",
+				prefixGood + "See /guardian to view valid targets!"
 			);
 		}
 	}
