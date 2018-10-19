@@ -25,7 +25,7 @@ public class GuardianWorldCommand extends BaseCommand
 	@Description("Set the guardian's spawn point.")
 	@Subcommand("spawn_point|spawn")
 	@CommandPermission("guardian.spawnpoint")
-	public void setSpawnPoint(Player sender)
+	public void setSpawnPoint(Player sender, @Optional Location location)
 	{
 		GuardianTrait guardian = getGuardianFor(sender);
 
@@ -37,6 +37,12 @@ public class GuardianWorldCommand extends BaseCommand
 
 		if (!guardian.getNPC().isSpawned()) {
 			plugin.sendChannelMessage(sender, prefixBad + "NPC must be spawned for this command!");
+		}
+		else if (location != null)
+		{
+			guardian.destinationLocation = location;
+			guardian.destinationWorld = location.getWorld().getName();
+			plugin.sendChannelMessage(sender, prefixGood + "Spawn point updated using location!");
 		}
 		else {
 			// The guardian owner's position? or the guardian's position?
