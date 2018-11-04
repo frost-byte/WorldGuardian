@@ -70,6 +70,11 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-chat</artifactId>
+            <version>1.13-SNAPSHOT</version>
+        </dependency>
         <!-- Google Guice -->
         <dependency>
             <groupId>com.google.inject</groupId>

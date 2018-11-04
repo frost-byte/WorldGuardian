@@ -14,6 +14,8 @@ import net.frost_byte.worldguardian.integration.GuardianPermissions;
 import net.frost_byte.worldguardian.integration.GuardianSBTeams;
 import net.frost_byte.worldguardian.integration.GuardianSquads;
 import net.frost_byte.worldguardian.utility.ProjectUtil;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
@@ -30,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import static net.md_5.bungee.api.chat.TextComponent.fromLegacyText;
 
 @SuppressWarnings({ "FieldCanBeLocal", "WeakerAccess", "unused" })
 public class WorldGuardianPlugin extends JavaPlugin implements Listener
@@ -91,7 +95,7 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 		UUID pid = player.getUniqueId();
 
 		if (channelsManager != null)
-			msgList.forEach(m -> channelsManager.sendMessage(m, "global", pid));
+			msgList.forEach(m -> channelsManager.sendComponent("global", pid, fromLegacyText(m)));
 		else
 			player.sendMessage(messages);
 	}
@@ -104,7 +108,7 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 		List<String> msgList = Arrays.asList(messages);
 
 		if (channelsManager != null)
-			msgList.forEach(m -> channelsManager.broadcastMessage(m, "global"));
+			msgList.forEach(m -> channelsManager.broadcastComponent("global", fromLegacyText(m)));
 		else
 			msgList.forEach(Bukkit::broadcastMessage);
 	}

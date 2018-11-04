@@ -9,7 +9,7 @@ import net.citizensnpcs.api.ai.EntityTarget;
 import net.citizensnpcs.api.ai.TargetType;
 import net.citizensnpcs.api.ai.TeleportStuckAction;
 import net.citizensnpcs.api.ai.speech.SpeechContext;
-import net.citizensnpcs.api.ai.speech.SpeechController;
+
 import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.persistence.Persist;
@@ -47,12 +47,13 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static net.citizensnpcs.Settings.Setting.CHAT_FORMAT_TO_TARGET;
 import static net.frost_byte.worldguardian.WorldGuardianPlugin.*;
 import static net.frost_byte.worldguardian.utility.GuardianTargetType.*;
 import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
 import static net.frost_byte.worldguardian.utility.MaterialUtil.*;
 import static net.frost_byte.worldguardian.utility.NumberUtil.randomDecimal;
+import static net.md_5.bungee.api.ChatColor.*;
+
 
 @SuppressWarnings({ "WeakerAccess", "deprecation", "unused" })
 public class GuardianTrait extends Trait
@@ -61,6 +62,7 @@ public class GuardianTrait extends Trait
 	public static final int attackRateMax = 2000;
 	public static final int targetedRateMax = 2000;
 	public static final int healRateMax = 2000;
+	public static final String SEP = "\n";
 
 	int cleverTicks = 0;
 	public int cTick = 0;
@@ -1614,10 +1616,10 @@ public class GuardianTrait extends Trait
 
 		StringBuilder builder = new StringBuilder();
 
-		builder.append(ChatColor.GOLD)
+		builder.append(GOLD)
 			.append("Items\n")
 			.append("------\n")
-			.append(ChatColor.AQUA);
+			.append(AQUA);
 
 		Arrays.stream(items)
 			.filter(Objects::nonNull)
@@ -2319,11 +2321,11 @@ public class GuardianTrait extends Trait
 	// TabChannels isn't loaded?
 	public void sayTo(Player player, String message) {
 		SpeechContext sc = new SpeechContext(npc, message, player);
+		String npcName = npc.getName();
+		ChatColor npcColor = ChatColor.getByChar(npcName.substring(1,2));
 		//sc.getMessage()
-		SpeechController controller = npc.getDefaultSpeechController();
-		String text = ChatColor.GREEN + CHAT_FORMAT_TO_TARGET.asString()
-			.replace("<npc>", npc.getName())
-			.replace("<text>", sc.getMessage());
+		//SpeechController controller = npc.getDefaultSpeechController();
+		String text = npcColor + "[" + npc.getName() + "] -> You: "+ sc.getMessage() + SEP;
 		plugin.sendChannelMessage(player, text);
 		//npc.getDefaultSpeechController().speak(sc, "chat");
 	}
