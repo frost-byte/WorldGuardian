@@ -1,6 +1,5 @@
 package net.frost_byte.worldguardian.utility;
 
-import com.google.inject.Inject;
 import net.frost_byte.worldguardian.GuardianTrait;
 import net.frost_byte.worldguardian.WorldGuardianPlugin;
 import org.bukkit.ChatColor;
@@ -26,18 +25,10 @@ public enum GuardianTargetCategory
 	private String categoryName;
 	private String searchType;
 
-	@Inject
-	private WorldGuardianPlugin plugin;
-
 	GuardianTargetCategory(String categoryName, String searchType)
 	{
 		this.categoryName = categoryName;
 		this.searchType = searchType;
-	}
-
-	public WorldGuardianPlugin getPlugin()
-	{
-		return plugin;
 	}
 
 	public String getCategoryName() { return categoryName; }
@@ -71,9 +62,9 @@ public enum GuardianTargetCategory
 				guardian.getName(),
 				searchString
 			);
-			category.getPlugin().getLogger().info("GuardianTargetCategory.addTarget: " + debugInfo);
+			getPlugin().getLogger().info("GuardianTargetCategory.addTarget: " + debugInfo);
 		}
-		WorldGuardianPlugin plugin = category.getPlugin();
+		WorldGuardianPlugin plugin = getPlugin();
 
 		switch (category)
 		{
@@ -169,7 +160,7 @@ public enum GuardianTargetCategory
 		boolean doRegex = true;
 		searchString = ChatColor.translateAlternateColorCodes('&', searchString);
 
-		WorldGuardianPlugin plugin = category.getPlugin();
+		WorldGuardianPlugin plugin = getPlugin();
 		switch (category)
 		{
 			case PLAYER:
@@ -263,7 +254,7 @@ public enum GuardianTargetCategory
 		boolean doRegex = true;
 		searchString = ChatColor.translateAlternateColorCodes('&', searchString);
 
-		WorldGuardianPlugin plugin = category.getPlugin();
+		WorldGuardianPlugin plugin = getPlugin();
 		switch (category)
 		{
 			case PLAYER:
@@ -356,7 +347,7 @@ public enum GuardianTargetCategory
 		boolean doRegex = true;
 		searchString = ChatColor.translateAlternateColorCodes('&', searchString);
 
-		WorldGuardianPlugin plugin = category.getPlugin();
+		WorldGuardianPlugin plugin = getPlugin();
 
 		switch (category)
 		{

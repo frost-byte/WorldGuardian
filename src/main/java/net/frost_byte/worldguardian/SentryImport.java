@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
+import net.frost_byte.worldguardian.targeting.GuardianTarget;
 import net.frost_byte.worldguardian.utility.GuardianTargetType;
 
 import org.bukkit.Bukkit;

@@ -1,5 +1,6 @@
-package net.frost_byte.worldguardian;
+package net.frost_byte.worldguardian.targeting;
 
+import net.frost_byte.worldguardian.Target;
 import net.frost_byte.worldguardian.utility.GuardianTargetType;
 import org.bukkit.entity.EntityType;
 

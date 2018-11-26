@@ -22,7 +22,7 @@ import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.*;
 public class GuardianOrderCommand extends BaseCommand
 {
 	@Inject
-		private WorldGuardianPlugin plugin;
+	private WorldGuardianPlugin plugin;
 
 	@Description("Respawn the guardian.")
 	@Subcommand("respawn")

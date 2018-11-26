@@ -1,11 +1,11 @@
 package net.frost_byte.worldguardian;
 
 import co.aikar.commands.BukkitCommandManager;
-import com.google.common.collect.Lists;
 import com.google.inject.Injector;
 
 import me.lucko.luckperms.api.LuckPermsApi;
 import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.trait.TraitInfo;
 
 import net.frost_byte.worldguardian.command.*;
@@ -14,13 +14,13 @@ import net.frost_byte.worldguardian.integration.GuardianPermissions;
 import net.frost_byte.worldguardian.integration.GuardianSBTeams;
 import net.frost_byte.worldguardian.integration.GuardianSquads;
 import net.frost_byte.worldguardian.utility.ProjectUtil;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
 import com.github.games647.tabchannels.TabChannelsManager;
 
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
@@ -28,10 +28,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static net.md_5.bungee.api.chat.TextComponent.fromLegacyText;
 
@@ -61,15 +58,82 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 
 	public static final String prefixBad = ChatColor.DARK_GREEN + "[Guardian] " + ChatColor.RED;
 
-//	private GuardianTargetFactory targetFactory;
-
-
+	/**
+	 * Configuration option: maximum health value any NPC can ever have.
+	 */
 	public double maxHealth;
+
+	/**
+	 * Configuration option: maximum duration (in ticks) an NPC can know where a hidden target is.
+	 */
 	public int cleverTicks;
+
+	/**
+	 * Configuration option: whether the skull weapon is allowed.
+	 */
 	public boolean canUseSkull;
-	public static boolean debugMe = false;
+
+	/**
+	 * Configuration option: whether to block some events that may cause other plugins to have issues.
+	 */
+	public boolean blockEvents;
+
+	/**
+	 * Configuration option: whether to use an alternative (work-around) method of applying damage.
+	 */
+	public boolean alternateDamage;
+
+	/**
+	 * Configuration option: whether to work-around damage-giving issues.
+	 */
+	public boolean workaroundDamage;
+
+	/**
+	 * Configuration option: minimum arrow shooting speed.
+	 */
+	public double minShootSpeed;
+
+	/**
+	 * Configuration option: whether to work-around potential NPC item drop issues.
+	 */
+	public boolean workaroundDrops;
+
+	/**
+	 * Configuration option: whether to enable NPC death messages.
+	 */
+	public boolean deathMessages;
+
+	/**
+	 * Configuration option: the sound to play when using the Spectral attack.
+	 */
+	public Sound spectralSound;
+
+	/**
+	 * Configuration option: whether to ignore invisible targets.
+	 */
+	public boolean ignoreInvisible;
+
+	/**
+	 * Configuration option: guarding distance values.
+	 */
+	public int guardDistanceMinimum, guardDistanceSelectionRange, guardDistanceMargin;
+
+	/**
+	 * Configuration option: whether to work-around a pathfinder issue.
+	 */
+	public boolean workaroundEntityChasePathfinder;
+
+	/**
+	 * Configuration option: whether to protect the NPC from being harmed by ignored entities.
+	 */
+	public boolean protectFromIgnores;
+
+	/**
+	 * Configuration option: Standard tick-rate for NPC updates.
+	 */
 	public int tickRate = 10;
 
+	public static boolean debugMe = false;
 
 	public final static List<GuardianIntegration> integrations = new ArrayList<>();
 
@@ -173,74 +237,62 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 		}
 		cleverTicks = getConfig().getInt("random.clever ticks", 10);
 		canUseSkull = getConfig().getBoolean("random.skull allowed", true);
+		blockEvents = getConfig().getBoolean("random.workaround bukkit events", false);
+		alternateDamage = getConfig().getBoolean("random.enforce damage", false);
+		workaroundDamage = getConfig().getBoolean("random.workaround damage", false);
+		minShootSpeed = getConfig().getDouble("random.shoot speed minimum", 20);
+		workaroundDrops = getConfig().getBoolean("random.workaround drops", false) || blockEvents;
+		deathMessages = getConfig().getBoolean("random.death messages", true);
+		try {
+			spectralSound = Sound.valueOf(getConfig().getString("random.spectral sound", "ENTITY_VILLAGER_YES"));
+		}
+		catch (Throwable e) {
+			getLogger().warning("Sentinel Configuration value 'random.spectral sound' is set to an invalid sound name. This is usually an ignorable issue.");
+		}
+		ignoreInvisible = getConfig().getBoolean("random.ignore invisible targets");
+		guardDistanceMinimum = getConfig().getInt("random.guard follow distance.minimum", 7);
+		guardDistanceMargin = getConfig().getInt("random.guard follow distance.selction range", 4);
+		guardDistanceSelectionRange = getConfig().getInt("random.guard follow distance.margin", 2);
+		workaroundEntityChasePathfinder = getConfig().getBoolean("random.workaround entity chase pathfinder", false);
+		protectFromIgnores = getConfig().getBoolean("random.protected", false);
 		BukkitRunnable postLoad = new BukkitRunnable() {
+
 			@Override
 			public void run() {
-//				for (NPC npc : CitizensAPI.getNPCRegistry()) {
-//					if (!npc.isSpawned() && npc.hasTrait(GuardianTrait.class)) {
-//						GuardianTrait guardian = npc.getTrait(GuardianTrait.class);
-//						for (String target : new HashSet<String>(guardian.targets)) {
-//							guardian.targets.add(GuardianTarget.forName(target).name());
-//						}
-//						for (String target : new HashSet<String>(guardian.ignores)) {
-//							guardian.ignores.add(GuardianTarget.forName(target).name());
-//						}
-//						if (guardian.respawnTime > 0) {
-//							if (guardian.spawnPoint == null && npc.getStoredLocation() == null) {
-//								getLogger().warning("NPC " + npc.getId() + " has a null spawn point and can't be spawned. Perhaps the world was deleted?");
-//								continue;
-//							}
-//							npc.spawn(guardian.spawnPoint == null ? npc.getStoredLocation() : guardian.spawnPoint);
-//						}
-//					}
-//				}
+				for (NPC npc : CitizensAPI.getNPCRegistry()) {
+					if (!npc.isSpawned() && npc.hasTrait(GuardianTrait.class)) {
+						GuardianTrait guardian = npc.getTrait(GuardianTrait.class);
+						if (guardian.respawnTime > 0) {
+							if (guardian.spawnPoint == null && npc.getStoredLocation() == null) {
+								getLogger().warning(
+									"NPC " + npc.getId() + " has a null spawn point and can't be spawned. "+
+									"Perhaps the world was deleted?"
+								);
+								continue;
+							}
+							npc.spawn(guardian.spawnPoint == null ? npc.getStoredLocation() : guardian.spawnPoint);
+						}
+					}
+				}
 			}
 		};
-		maxHealth = getConfig().getDouble("random.max health", 2000);
 		postLoad.runTaskLater(this, 40);
+		maxHealth = getConfig().getDouble("random.max health", 2000);
 		tickRate = getConfig().getInt("update rate", 10);
+
 		getLogger().info("Guardian loaded!");
 		getServer().getPluginManager().registerEvents(this, this);
 
-//		try {
-//			MetricsLite metrics = new MetricsLite(this);
-//			metrics.start();
-//		}
-//		catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//		new BukkitRunnable() {
-//			@Override
-//			public void run() {
-//				if (!getConfig().getBoolean("stats_opt_out", false)) {
-//					new StatsRecord().start();
-//				}
-//			}
-//		}.runTaskTimer(this, 100, 20 * 60 * 60);
-//
 		integrations.add(new GuardianHealth());
 		integrations.add(new GuardianPermissions());
 		integrations.add(new GuardianSBTeams());
 		integrations.add(new GuardianSquads());
-
-//		if (Bukkit.getPluginManager().getPlugin("Towny") != null) {
-//			try {
-//				integrations.add(new GuardianTowny());
-//				getLogger().info("Guardian found Towny! Adding support for it!");
-//			}
-//			catch (Throwable ex) {
-//				ex.printStackTrace();
-//			}
-//		}
 
 		// Configurations
 		registerConfigs();
 
 		// EventListeners
 		registerListeners();
-
-		// Menus
-		//registerMenus();
 
 		// Initialize Managers
 		initManagers();

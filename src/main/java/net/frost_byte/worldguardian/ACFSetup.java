@@ -3,7 +3,7 @@ package net.frost_byte.worldguardian;
 import co.aikar.commands.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import net.frost_byte.worldguardian.utility.EnumUtil;
+import net.frost_byte.worldguardian.targeting.GuardianTarget;
 import net.frost_byte.worldguardian.utility.GuardianTargetCategory;
 import net.frost_byte.worldguardian.utility.GuardianTargetType;
 
@@ -79,7 +79,7 @@ public class ACFSetup
 
 				try
 				{
-					targetType = GuardianTargetType.valueOf(c.popFirstArg());
+					targetType = GuardianTargetType.valueOf(targetTypeName);
 				}
 				catch (IllegalArgumentException ex)
 				{
@@ -93,17 +93,17 @@ public class ACFSetup
 		con.registerContext(
 				GuardianTargetCategory.class,
 				c -> {
-					String name = c.popFirstArg();
-					logger.info("ACFSetup.registerContext.GuardianTargetCategory: name: " + name);
+					String categoryName = c.popFirstArg();
+					logger.info("ACFSetup.registerContext.GuardianTargetCategory: name: " + categoryName);
 					GuardianTargetCategory targetCategory;
 
 					try
 					{
-						targetCategory = GuardianTargetCategory.valueOf(c.popFirstArg());
+						targetCategory = GuardianTargetCategory.valueOf(categoryName);
 					}
 					catch (IllegalArgumentException ex)
 					{
-						throw new InvalidCommandArgument("Invalid target type!");
+						throw new InvalidCommandArgument("Invalid target category!");
 					}
 
 					return targetCategory;
@@ -123,7 +123,7 @@ public class ACFSetup
 					}
 					catch (IllegalArgumentException ex)
 					{
-						throw new InvalidCommandArgument("Invalid target type!");
+						throw new InvalidCommandArgument("Invalid guardian target!");
 					}
 
 					return target;

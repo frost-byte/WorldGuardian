@@ -13,16 +13,29 @@ import net.citizensnpcs.api.ai.speech.SpeechContext;
 import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.persistence.Persist;
+import net.citizensnpcs.api.persistence.PersistenceLoader;
+import net.citizensnpcs.api.persistence.Persister;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.api.trait.trait.Inventory;
 import net.citizensnpcs.api.trait.trait.Owner;
+import net.citizensnpcs.api.util.DataKey;
 import net.citizensnpcs.trait.waypoint.Waypoint;
 import net.citizensnpcs.trait.waypoint.WaypointProvider;
 import net.citizensnpcs.trait.waypoint.Waypoints;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.PlayerAnimation;
+import net.frost_byte.worldguardian.events.GuardianAttackEvent;
+import net.frost_byte.worldguardian.targeting.GuardianTarget;
+import net.frost_byte.worldguardian.targeting.GuardianTargetList;
+import net.frost_byte.worldguardian.targeting.GuardianTargetingHelper;
 import net.frost_byte.worldguardian.utility.*;
-import org.bukkit.*;
+import net.md_5.bungee.api.ChatColor;
+
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -64,6 +77,26 @@ public class GuardianTrait extends Trait
 	public static final int healRateMax = 2000;
 	public static final String SEP = "\n";
 
+	/**
+	 * Helper for targeting logic.
+	 */
+	public GuardianTargetingHelper targetingHelper;
+
+	/**
+	 * Helper for items.
+	 */
+	public GuardianItemHelper itemHelper;
+
+	/**
+	 * Helper for weapons.
+	 */
+	public GuardianWeaponHelper weaponHelper;
+
+	/**
+	 * Helper for attacking.
+	 */
+	public GuardianAttackHelper attackHelper;
+
 	int cleverTicks = 0;
 	public int cTick = 0;
 	public boolean chased = false;
@@ -97,7 +130,17 @@ public class GuardianTrait extends Trait
 	@Inject
 	private LuckPermsApi luckPermsApi;
 
-	public GuardianTrait(){super("guardian");	}
+	public GuardianTrait(){
+		super("guardian");
+		targetingHelper = new GuardianTargetingHelper();
+		itemHelper = new GuardianItemHelper();
+		weaponHelper = new GuardianWeaponHelper();
+		attackHelper = new GuardianAttackHelper();
+		targetingHelper.setTraitObject(this);
+		itemHelper.setTraitObject(this);
+		weaponHelper.setTraitObject(this);
+		attackHelper.setTraitObject(this);
+	}
 
 	public void init(WorldGuardianPlugin plugin, LuckPermsApi luckPermsApi)
 	{
@@ -299,6 +342,29 @@ public class GuardianTrait extends Trait
 
 	@Persist("destinationLocation")
 	public Location destinationLocation = null;
+
+	@Persist("allTargets")
+	public GuardianTargetList allTargets = new GuardianTargetList();
+
+	@Persist("allIgnores")
+	public GuardianTargetList allIgnores = new GuardianTargetList();
+
+	public static class GuardianTargetListPersister implements Persister<GuardianTargetList>
+	{
+		@Override
+		public GuardianTargetList create(DataKey dataKey) {
+			return PersistenceLoader.load(new GuardianTargetList(), dataKey);
+		}
+
+		@Override
+		public void save(GuardianTargetList o, DataKey dataKey) {
+			PersistenceLoader.save(o, dataKey);
+		}
+	}
+
+	static {
+		PersistenceLoader.registerPersistDelegate(GuardianTargetList.class, GuardianTargetListPersister.class);
+	}
 
 	public UUID getGuarding() {
 		if (guardingLower == 0 && guardingUpper == 0) {
@@ -541,6 +607,20 @@ public class GuardianTrait extends Trait
 			plugin.getLogger().info(debugOutput);
 		}
 
+		if (plugin.protectFromIgnores && imBeingAttacked)
+		{
+			if (attacker instanceof LivingEntity && targetingHelper.isIgnored((LivingEntity) event.getDamager())) {
+				event.setCancelled(true);
+				return;
+			}
+			else if (attacker instanceof Projectile) {
+				ProjectileSource source = ((Projectile) attacker).getShooter();
+				if (source instanceof LivingEntity && targetingHelper.isIgnored((LivingEntity) source)) {
+					event.setCancelled(true);
+					return;
+				}
+			}
+		}
 		if (guardianProtected && imBeingAttacked) {
 			if (event.getDamager() instanceof LivingEntity && isIgnored((LivingEntity) event.getDamager())) {
 				event.setCancelled(true);
@@ -2322,12 +2402,14 @@ public class GuardianTrait extends Trait
 	public void sayTo(Player player, String message) {
 		SpeechContext sc = new SpeechContext(npc, message, player);
 		String npcName = npc.getName();
-		ChatColor npcColor = ChatColor.getByChar(npcName.substring(1,2));
-		//sc.getMessage()
-		//SpeechController controller = npc.getDefaultSpeechController();
+		char colorChar = npcName.charAt(1);
+		ChatColor npcColor = ChatColor.getByChar(colorChar);
+
+		if (npcColor == null)
+			npcColor = GREEN;
+
 		String text = npcColor + "[" + npc.getName() + "] -> You: "+ sc.getMessage() + SEP;
 		plugin.sendChannelMessage(player, text);
-		//npc.getDefaultSpeechController().speak(sc, "chat");
 	}
 
 	public void sayToNearbyPlayers(String message, int distance)
@@ -2469,6 +2551,12 @@ public class GuardianTrait extends Trait
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void whenSomethingMightDie(EntityDamageByEntityEvent event) {
 		needsDropsClear.remove(event.getEntity().getUniqueId());
+	}
+
+	public void debug(String message) {
+		if (debugMe) {
+			plugin.getLogger().info("WorldGuardian Debug: " + npc.getId() + "/" + npc.getName() + ": " + message);
+		}
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)

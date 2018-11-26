@@ -1,4 +1,4 @@
-package net.frost_byte.worldguardian;
+package net.frost_byte.worldguardian.events;
 
 import net.citizensnpcs.api.event.NPCEvent;
 import net.citizensnpcs.api.npc.NPC;
