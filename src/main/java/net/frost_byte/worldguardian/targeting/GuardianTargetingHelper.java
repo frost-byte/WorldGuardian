@@ -96,6 +96,7 @@ public class GuardianTargetingHelper extends GuardianHelperObject
 	 * Removes a temporary target from this NPC (and squadmates if relevant).
 	 * Returns whether anything was removed.
 	 */
+	@SuppressWarnings("UnusedReturnValue")
 	public boolean removeTarget(UUID id) {
 		GuardianCurrentTarget target = new GuardianCurrentTarget();
 		target.targetID = id;

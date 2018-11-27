@@ -5,18 +5,17 @@ import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
+
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.frost_byte.worldguardian.GuardianTrait;
-import net.frost_byte.worldguardian.SentryImport;
 import net.frost_byte.worldguardian.WorldGuardianPlugin;
 import org.bukkit.Bukkit;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import static net.frost_byte.worldguardian.WorldGuardianPlugin.*;
+
 import static net.frost_byte.worldguardian.WorldGuardianPlugin.ColorBasic;
 import static net.frost_byte.worldguardian.WorldGuardianPlugin.debugMe;
 import static net.frost_byte.worldguardian.WorldGuardianPlugin.prefixGood;
@@ -33,33 +32,13 @@ public class GuardianCommand extends BaseCommand
 	@Inject
 		private WorldGuardianPlugin plugin;
 
-	@Inject private SentryImport sentryImport;
+
 
 	@HelpCommand
 	public void doHelp(CommandSender sender, CommandHelp help)
 	{
 		help.showHelp();
 		getValidTargetsMessage();
-	}
-
-	@Description("Import NPCs from the Sentry plugin.")
-	@Subcommand("import")
-	@CommandPermission("guardian.sentryimport")
-	public void importCommand(Player sender)
-	{
-		if (sentryImport == null || Bukkit.getServer().getPluginManager().getPlugin("Sentry") == null)
-		{
-			plugin.sendChannelMessage(sender, prefixBad + "Sentry plugin must be installed to perform import!");
-		}
-		else
-		{
-			int imported = sentryImport.PerformImport();
-			plugin.sendChannelMessage(
-				sender,
-				prefixGood + "Converting all NPCs from Sentry to Guardian...",
-				prefixGood + "Imported " + imported + " Sentry NPCs. You may now restart and remove the Sentry plugin."
-			);
-		}
 	}
 
 	@Description("Toggle debugging for the selected guardian")
@@ -113,21 +92,21 @@ public class GuardianCommand extends BaseCommand
 			sender, 
 			prefixGood + RESET + guardian.getNPC().getFullName() + ColorBasic + ": owned by " + RESET
 				+ getOwner(guardian.getNPC()),
-			prefixGood + "Targets: " + AQUA + getTargetString(guardian.targets),
-			prefixGood + "Player Name Targets: " + AQUA + getNameTargetString(guardian.playerNameTargets),
-			prefixGood + "NPC Name Targets: " + AQUA + getNameTargetString(guardian.npcNameTargets),
-			prefixGood + "Entity Name Targets: " + AQUA + getNameTargetString(guardian.entityNameTargets),
-			prefixGood + "Held Item Targets: " + AQUA + getNameTargetString(guardian.heldItemTargets),
-			prefixGood + "Group Targets: " + AQUA + getNameTargetString(guardian.groupTargets),
-			prefixGood + "Event Targets: " + AQUA + getNameTargetString(guardian.eventTargets),
-			prefixGood + "Other Targets: " + AQUA + getNameTargetString(guardian.otherTargets),
-			prefixGood + "Ignored Targets: " + AQUA + getTargetString(guardian.ignores),
-			prefixGood + "Ignored Player Name Targets: " + AQUA + getNameTargetString(guardian.playerNameIgnores),
-			prefixGood + "Ignored NPC Name Targets: " + AQUA + getNameTargetString(guardian.npcNameIgnores),
-			prefixGood + "Ignored Entity Name Targets: " + AQUA + getNameTargetString(guardian.entityNameIgnores),
-			prefixGood + "Ignored Held Item Targets: " + AQUA + getNameTargetString(guardian.heldItemIgnores),
-			prefixGood + "Ignored Group Targets: " + AQUA + getNameTargetString(guardian.groupIgnores),
-			prefixGood + "Ignored Other Targets: " + AQUA + getNameTargetString(guardian.otherIgnores)
+			prefixGood + "Targets: " + AQUA + getTargetString(guardian.allTargets.targets),
+			prefixGood + "Player Name Targets: " + AQUA + getNameTargetString(guardian.allTargets.byPlayerName),
+			prefixGood + "NPC Name Targets: " + AQUA + getNameTargetString(guardian.allTargets.byNpcName),
+			prefixGood + "Entity Name Targets: " + AQUA + getNameTargetString(guardian.allTargets.byEntityName),
+			prefixGood + "Held Item Targets: " + AQUA + getNameTargetString(guardian.allTargets.byHeldItem),
+			prefixGood + "Group Targets: " + AQUA + getNameTargetString(guardian.allTargets.byGroup),
+			prefixGood + "Event Targets: " + AQUA + getNameTargetString(guardian.allTargets.byEvent),
+			prefixGood + "Other Targets: " + AQUA + getNameTargetString(guardian.allTargets.byOther),
+			prefixGood + "Ignored Targets: " + AQUA + getTargetString(guardian.allIgnores.targets),
+			prefixGood + "Ignored Player Name Targets: " + AQUA + getNameTargetString(guardian.allIgnores.byPlayerName),
+			prefixGood + "Ignored NPC Name Targets: " + AQUA + getNameTargetString(guardian.allIgnores.byNpcName),
+			prefixGood + "Ignored Entity Name Targets: " + AQUA + getNameTargetString(guardian.allIgnores.byEntityName),
+			prefixGood + "Ignored Held Item Targets: " + AQUA + getNameTargetString(guardian.allIgnores.byHeldItem),
+			prefixGood + "Ignored Group Targets: " + AQUA + getNameTargetString(guardian.allIgnores.byGroup),
+			prefixGood + "Ignored Other Targets: " + AQUA + getNameTargetString(guardian.allIgnores.byOther)
 		);
 	}
 

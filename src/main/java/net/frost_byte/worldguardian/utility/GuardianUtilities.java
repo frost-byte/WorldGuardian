@@ -1,11 +1,10 @@
 package net.frost_byte.worldguardian.utility;
 
 import net.citizensnpcs.api.ai.EntityTarget;
-import net.frost_byte.worldguardian.targeting.GuardianTarget;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.EntityEquipment;
@@ -23,7 +22,8 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-@SuppressWarnings( { "WeakerAccess", "unused" }) public class GuardianUtilities
+@SuppressWarnings( { "WeakerAccess", "unused" })
+public class GuardianUtilities
 {
 	/**
 	 * A random object for reuse.
@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 	 * Returns the item held in an entity's hand.
 	 */
 	public static ItemStack getHeldItem(LivingEntity entity) {
-		return entity.getEquipment().getItemInHand();
+		return entity.getEquipment().getItemInMainHand();
 	}
 
 	/**
@@ -156,12 +156,17 @@ import java.util.regex.Pattern;
 	/**
 	 * Returns whether an entity is invisible (when invisible targets are ignorable).
 	 */
-	public static boolean isInvisible(LivingEntity entity) {
+	@SuppressWarnings("SimplifiableIfStatement")
+	public static boolean isInvisible(LivingEntity entity)
+	{
 		EntityEquipment eq = entity.getEquipment();
-		if (!GuardianTargetUtil.getPlugin().ignoreInvisible
-			|| !entity.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+		if (
+			!GuardianTargetUtil.getPlugin().ignoreInvisible ||
+			!entity.hasPotionEffect(PotionEffectType.INVISIBILITY)
+		){
 			return false;
 		}
+
 		if (!isAir(eq.getItemInMainHand()) || !isAir(eq.getItemInOffHand())) {
 			return false;
 		}

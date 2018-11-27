@@ -65,7 +65,7 @@ public class GuardianOrderCommand extends BaseCommand
 			guardian.getLivingEntity().damage(guardian.health * 2);
 			plugin.sendChannelMessage(sender, prefixGood + "Killed!");
 		}
-		guardian.currentTargets.clear();
+		guardian.targetingHelper.currentTargets.clear();
 		guardian.chasing = null;
 		plugin.sendChannelMessage(sender, prefixGood + "Targets forgiven.");
 	}
@@ -83,7 +83,7 @@ public class GuardianOrderCommand extends BaseCommand
 			return;
 		}
 
-		guardian.currentTargets.clear();
+		guardian.targetingHelper.currentTargets.clear();
 		guardian.chasing = null;
 		plugin.sendChannelMessage(sender, prefixGood + "Targets forgiven.");
 	}

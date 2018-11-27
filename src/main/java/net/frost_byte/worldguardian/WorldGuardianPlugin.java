@@ -133,13 +133,26 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 	 */
 	public int tickRate = 10;
 
+	/**
+	 * Whether debugging is enabled.
+	 */
 	public static boolean debugMe = false;
 
+	/**
+	 * All current integrations available to WorldGuardian.
+	 */
 	public final static List<GuardianIntegration> integrations = new ArrayList<>();
 
+	/**
+	 * Expected configuration file version.
+	 */
 	public final static int CONFIG_VERSION = 9;
 
+	/**
+	 * Prefix string for an inventory title.
+	 */
 	public final static String InvPrefix = ChatColor.GREEN + "Guardian ";
+
 	/**
 	 * Perform Plugin initialization before it is
 	 * enabled.
@@ -231,54 +244,7 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 
 
 		CitizensAPI.getTraitFactory().registerTrait(TraitInfo.create(GuardianTrait.class).withName("guardian"));
-		saveDefaultConfig();
-		if (getConfig().getInt("config version", 0) != CONFIG_VERSION) {
-			getLogger().warning("Outdated Guardian config - please delete it to regenerate it!");
-		}
-		cleverTicks = getConfig().getInt("random.clever ticks", 10);
-		canUseSkull = getConfig().getBoolean("random.skull allowed", true);
-		blockEvents = getConfig().getBoolean("random.workaround bukkit events", false);
-		alternateDamage = getConfig().getBoolean("random.enforce damage", false);
-		workaroundDamage = getConfig().getBoolean("random.workaround damage", false);
-		minShootSpeed = getConfig().getDouble("random.shoot speed minimum", 20);
-		workaroundDrops = getConfig().getBoolean("random.workaround drops", false) || blockEvents;
-		deathMessages = getConfig().getBoolean("random.death messages", true);
-		try {
-			spectralSound = Sound.valueOf(getConfig().getString("random.spectral sound", "ENTITY_VILLAGER_YES"));
-		}
-		catch (Throwable e) {
-			getLogger().warning("Sentinel Configuration value 'random.spectral sound' is set to an invalid sound name. This is usually an ignorable issue.");
-		}
-		ignoreInvisible = getConfig().getBoolean("random.ignore invisible targets");
-		guardDistanceMinimum = getConfig().getInt("random.guard follow distance.minimum", 7);
-		guardDistanceMargin = getConfig().getInt("random.guard follow distance.selction range", 4);
-		guardDistanceSelectionRange = getConfig().getInt("random.guard follow distance.margin", 2);
-		workaroundEntityChasePathfinder = getConfig().getBoolean("random.workaround entity chase pathfinder", false);
-		protectFromIgnores = getConfig().getBoolean("random.protected", false);
-		BukkitRunnable postLoad = new BukkitRunnable() {
-
-			@Override
-			public void run() {
-				for (NPC npc : CitizensAPI.getNPCRegistry()) {
-					if (!npc.isSpawned() && npc.hasTrait(GuardianTrait.class)) {
-						GuardianTrait guardian = npc.getTrait(GuardianTrait.class);
-						if (guardian.respawnTime > 0) {
-							if (guardian.spawnPoint == null && npc.getStoredLocation() == null) {
-								getLogger().warning(
-									"NPC " + npc.getId() + " has a null spawn point and can't be spawned. "+
-									"Perhaps the world was deleted?"
-								);
-								continue;
-							}
-							npc.spawn(guardian.spawnPoint == null ? npc.getStoredLocation() : guardian.spawnPoint);
-						}
-					}
-				}
-			}
-		};
-		postLoad.runTaskLater(this, 40);
-		maxHealth = getConfig().getDouble("random.max health", 2000);
-		tickRate = getConfig().getInt("update rate", 10);
+		loadConfig();
 
 		getLogger().info("Guardian loaded!");
 		getServer().getPluginManager().registerEvents(this, this);
@@ -307,6 +273,64 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 		registerCommands();
 	}
 
+	/**
+	 * Load the Configuration for the Plugin
+	 */
+	private void loadConfig()
+	{
+		saveDefaultConfig();
+		if (getConfig().getInt("config version", 0) != CONFIG_VERSION) {
+			getLogger().warning("Outdated Guardian config - please delete it to regenerate it!");
+		}
+		cleverTicks = getConfig().getInt("random.clever ticks", 10);
+		canUseSkull = getConfig().getBoolean("random.skull allowed", true);
+		blockEvents = getConfig().getBoolean("random.workaround bukkit events", false);
+		alternateDamage = getConfig().getBoolean("random.enforce damage", false);
+		workaroundDamage = getConfig().getBoolean("random.workaround damage", false);
+		minShootSpeed = getConfig().getDouble("random.shoot speed minimum", 20);
+		workaroundDrops = getConfig().getBoolean("random.workaround drops", false) || blockEvents;
+		deathMessages = getConfig().getBoolean("random.death messages", true);
+		try {
+			spectralSound = Sound.valueOf(getConfig().getString("random.spectral sound", "ENTITY_VILLAGER_YES"));
+		}
+		catch (Throwable e) {
+			getLogger().warning("Sentinel Configuration value 'random.spectral sound' is set to an invalid sound name. This is usually an ignorable issue.");
+		}
+		ignoreInvisible = getConfig().getBoolean("random.ignore invisible targets");
+		guardDistanceMinimum = getConfig().getInt("random.guard follow distance.minimum", 7);
+		guardDistanceMargin = getConfig().getInt("random.guard follow distance.selction range", 4);
+		guardDistanceSelectionRange = getConfig().getInt("random.guard follow distance.margin", 2);
+		workaroundEntityChasePathfinder = getConfig().getBoolean("random.workaround entity chase pathfinder", false);
+		protectFromIgnores = getConfig().getBoolean("random.protected", false);
+		BukkitRunnable postLoad = new BukkitRunnable() {
+
+			@Override
+			public void run() {
+			for (NPC npc : CitizensAPI.getNPCRegistry())
+			{
+				if (!npc.isSpawned() && npc.hasTrait(GuardianTrait.class))
+				{
+					GuardianTrait guardian = npc.getTrait(GuardianTrait.class);
+					if (guardian.respawnTime > 0)
+					{
+						if (guardian.spawnPoint == null && npc.getStoredLocation() == null)
+						{
+							getLogger().warning(
+								"NPC " + npc.getId() + " has a null spawn point and can't be spawned. "+
+								"Perhaps the world was deleted?"
+							);
+							continue;
+						}
+						npc.spawn(guardian.spawnPoint == null ? npc.getStoredLocation() : guardian.spawnPoint);
+					}
+				}
+			}
+			}
+		};
+		postLoad.runTaskLater(this, 40);
+		maxHealth = getConfig().getDouble("random.max health", 2000);
+		tickRate = getConfig().getInt("update rate", 10);
+	}
 	/**
 	 * Register all Managers and classes that will process Events
 	 * triggered by Bukkit or by the plugin

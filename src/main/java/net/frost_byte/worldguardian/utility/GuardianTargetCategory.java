@@ -69,19 +69,19 @@ public enum GuardianTargetCategory
 		switch (category)
 		{
 			case PLAYER:
-				names = guardian.playerNameTargets;
+				names = guardian.allTargets.byPlayerName;
 				break;
 			case NPC:
-				names = guardian.npcNameTargets;
+				names = guardian.allTargets.byNpcName;
 				break;
 			case ENTITY_NAME:
-				names = guardian.entityNameTargets;
+				names = guardian.allTargets.byEntityName;
 				break;
 			case HELD_ITEM:
-				names = guardian.heldItemTargets;
+				names = guardian.allTargets.byHeldItem;
 				break;
 			case GROUP_NAME:
-				if (guardian.groupTargets.contains(searchString))
+				if (guardian.allTargets.byGroup.contains(searchString))
 				{
 					plugin.sendChannelMessage(sender,
 						prefixBad +
@@ -90,7 +90,7 @@ public enum GuardianTargetCategory
 				}
 				else
 				{
-					guardian.groupTargets.add(searchString);
+					guardian.allTargets.byGroup.add(searchString);
 					plugin.sendChannelMessage(sender,
 						prefixGood +
 						"Tracking new target!"
@@ -98,11 +98,11 @@ public enum GuardianTargetCategory
 				}
 				return;
 			case EVENT:
-				names = guardian.eventTargets;
+				names = guardian.allTargets.byEvent;
 				break;
 			case OTHER:
 				doRegex = false;
-				names = guardian.otherTargets;
+				names = guardian.allTargets.byOther;
 				searchString = category.categoryName + ":" + searchString;
 				break;
 		}
@@ -164,19 +164,19 @@ public enum GuardianTargetCategory
 		switch (category)
 		{
 			case PLAYER:
-				names = guardian.playerNameTargets;
+				names = guardian.allTargets.byPlayerName;
 				break;
 			case NPC:
-				names = guardian.npcNameTargets;
+				names = guardian.allTargets.byNpcName;
 				break;
 			case ENTITY_NAME:
-				names = guardian.entityNameTargets;
+				names = guardian.allTargets.byEntityName;
 				break;
 			case HELD_ITEM:
-				names = guardian.heldItemTargets;
+				names = guardian.allTargets.byHeldItem;
 				break;
 			case GROUP_NAME:
-				if (guardian.groupTargets.contains(searchString))
+				if (guardian.allTargets.byGroup.contains(searchString))
 				{
 					plugin.sendChannelMessage(sender,
 						prefixBad +
@@ -185,7 +185,7 @@ public enum GuardianTargetCategory
 				}
 				else
 				{
-					guardian.groupTargets.add(searchString);
+					guardian.allTargets.byGroup.add(searchString);
 					plugin.sendChannelMessage(sender,
 						prefixGood +
 						"Tracking new target!"
@@ -193,11 +193,11 @@ public enum GuardianTargetCategory
 				}
 				return;
 			case EVENT:
-				names = guardian.eventTargets;
+				names = guardian.allTargets.byEvent;
 				break;
 			case OTHER:
 				doRegex = false;
-				names = guardian.otherTargets;
+				names = guardian.allTargets.byOther;
 				searchString = category.categoryName + ":" + searchString;
 				break;
 		}
@@ -258,19 +258,19 @@ public enum GuardianTargetCategory
 		switch (category)
 		{
 			case PLAYER:
-				names = guardian.playerNameIgnores;
+				names = guardian.allIgnores.byPlayerName;
 				break;
 			case NPC:
-				names = guardian.npcNameIgnores;
+				names = guardian.allIgnores.byNpcName;
 				break;
 			case ENTITY_NAME:
-				names = guardian.entityNameIgnores;
+				names = guardian.allIgnores.byEntityName;
 				break;
 			case HELD_ITEM:
-				names = guardian.heldItemIgnores;
+				names = guardian.allIgnores.byHeldItem;
 				break;
 			case GROUP_NAME:
-				if (guardian.groupIgnores.contains(searchString))
+				if (guardian.allIgnores.byGroup.contains(searchString))
 				{
 					plugin.sendChannelMessage(sender,
 						prefixBad +
@@ -279,7 +279,7 @@ public enum GuardianTargetCategory
 				}
 				else
 				{
-					guardian.groupIgnores.add(searchString);
+					guardian.allIgnores.byGroup.add(searchString);
 					plugin.sendChannelMessage(sender,
 						prefixGood +
 						"Ignoring new target!"
@@ -290,7 +290,7 @@ public enum GuardianTargetCategory
 				return;
 			case OTHER:
 				doRegex = false;
-				names = guardian.otherIgnores;
+				names = guardian.allIgnores.byOther;
 				searchString = category.categoryName + ":" + searchString;
 				break;
 		}
@@ -352,19 +352,19 @@ public enum GuardianTargetCategory
 		switch (category)
 		{
 			case PLAYER:
-				names = guardian.playerNameIgnores;
+				names = guardian.allIgnores.byPlayerName;
 				break;
 			case NPC:
-				names = guardian.npcNameIgnores;
+				names = guardian.allIgnores.byNpcName;
 				break;
 			case ENTITY_NAME:
-				names = guardian.entityNameIgnores;
+				names = guardian.allIgnores.byEntityName;
 				break;
 			case HELD_ITEM:
-				names = guardian.heldItemIgnores;
+				names = guardian.allIgnores.byHeldItem;
 				break;
 			case GROUP_NAME:
-				if (guardian.groupIgnores.contains(searchString))
+				if (guardian.allIgnores.byGroup.contains(searchString))
 				{
 					plugin.sendChannelMessage(sender,
 							prefixBad +
@@ -373,7 +373,7 @@ public enum GuardianTargetCategory
 				}
 				else
 				{
-					guardian.groupIgnores.add(searchString);
+					guardian.allIgnores.byGroup.add(searchString);
 					plugin.sendChannelMessage(sender,
 							prefixGood +
 									"Tracking new target!"
@@ -384,7 +384,7 @@ public enum GuardianTargetCategory
 				return;
 			case OTHER:
 				doRegex = false;
-				names = guardian.otherIgnores;
+				names = guardian.allIgnores.byOther;
 				searchString = category.categoryName + ":" + searchString;
 				break;
 		}
@@ -436,25 +436,25 @@ public enum GuardianTargetCategory
 		switch (category)
 		{
 			case PLAYER:
-				names = trait.playerNameTargets;
+				names = trait.allTargets.byPlayerName;
 				break;
 			case NPC:
-				names = trait.npcNameTargets;
+				names = trait.allTargets.byNpcName;
 				break;
 			case ENTITY_NAME:
-				names = trait.entityNameTargets;
+				names = trait.allTargets.byEntityName;
 				break;
 			case HELD_ITEM:
-				names = trait.heldItemTargets;
+				names = trait.allTargets.byHeldItem;
 				break;
 			case GROUP_NAME:
-				names = trait.groupTargets;
+				names = trait.allTargets.byGroup;
 				break;
 			case EVENT:
-				names = trait.eventTargets;
+				names = trait.allTargets.byEvent;
 				break;
 			default:
-				names = trait.otherTargets;
+				names = trait.allTargets.byOther;
 				break;
 		}
 		return names;

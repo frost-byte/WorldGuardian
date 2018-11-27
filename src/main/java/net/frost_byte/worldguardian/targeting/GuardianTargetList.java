@@ -15,7 +15,8 @@ import java.util.HashSet;
 
 import static net.frost_byte.worldguardian.utility.GuardianUtilities.*;
 
-@SuppressWarnings("WeakerAccess") public class GuardianTargetList
+@SuppressWarnings("WeakerAccess")
+public class GuardianTargetList
 {
 	/**
 	 * Returns whether an entity is targeted by this target list.
@@ -37,11 +38,23 @@ import static net.frost_byte.worldguardian.utility.GuardianUtilities.*;
 		}
 		if (entity.hasMetadata("NPC")) {
 			return targetsProcessed.contains(GuardianTargetUtil.getTarget(GuardianTargetType.NPCS)) ||
-				   isRegexTargeted(CitizensAPI.getNPCRegistry().getNPC(entity).getName(), byNpcName);
+				isRegexTargeted(CitizensAPI.getNPCRegistry().getNPC(entity).getName(), byNpcName);
 		}
-		if (entity instanceof Player) {
+
+		if (entity instanceof Player)
+		{
+			WorldGuardianPlugin plugin = GuardianTargetUtil.getPlugin();
+
 			if (isRegexTargeted(entity.getName(), byPlayerName)) {
 				return true;
+			}
+
+			Player player = (Player) entity;
+
+			for (String group : byGroup )
+			{
+				if (player.hasPermission("group." + group))
+					return true;
 			}
 		}
 		else if (isRegexTargeted(entity.getCustomName() == null ? entity.getType().name() : entity.getCustomName(), byEntityName)) {
