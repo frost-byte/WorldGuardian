@@ -9,6 +9,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.v1_13;
+
 @SuppressWarnings( { "unused", "WeakerAccess" }) public class GuardianItemHelper extends GuardianHelperObject
 {
 	/**
@@ -308,6 +310,17 @@ import org.bukkit.inventory.meta.ItemMeta;
 		}
 		ItemStack it = getHeldItem();
 		return it != null && MaterialUtil.isSkull(it.getType());
+	}
+
+	/**
+	 * Returns whether the NPC is using a trident item.
+	 */
+	public boolean usesTrident() {
+		if (!v1_13) {
+			return false;
+		}
+		ItemStack it = getHeldItem();
+		return it != null && it.getType() == Material.TRIDENT;
 	}
 
 	/**

@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionData;
@@ -17,21 +18,54 @@ import org.bukkit.util.Vector;
 import java.util.HashMap;
 
 import static net.frost_byte.worldguardian.WorldGuardianPlugin.debugMe;
+import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.v1_13;
+import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.v1_14;
+import static net.frost_byte.worldguardian.utility.GuardianTargetUtil.v1_9;
 
 @SuppressWarnings( { "unused", "WeakerAccess" })
 public class GuardianWeaponHelper extends GuardianHelperObject
 {
+	public static final EntityType LINGERING_POTION, TIPPED_ARROW;
+
+	static {
+		if (v1_14) {
+			LINGERING_POTION = EntityType.SPLASH_POTION;
+			TIPPED_ARROW = EntityType.ARROW;
+		}
+		else if (v1_9) {
+			LINGERING_POTION = EntityType.valueOf("LINGERING_POTION");
+			TIPPED_ARROW = EntityType.valueOf("TIPPED_ARROW");
+		}
+		else {
+			LINGERING_POTION = null;
+			TIPPED_ARROW = null;
+
+		}
+	}
 	/**
 	 * Fires a potion from the NPC at a target.
 	 */
 	public void firePotion(ItemStack potion, Location target, Vector lead) {
 		guardian.stats_potionsThrown++;
 		HashMap.SimpleEntry<Location, Vector> start = guardian.getLaunchDetail(target, lead);
-
-		Entity entpotion = start.getKey().getWorld().spawnEntity(
+		Entity entpotion;
+		if (v1_14) {
+			entpotion = start.getKey().getWorld().spawnEntity(
 				start.getKey(),
-				potion.getType() == Material.SPLASH_POTION ? EntityType.SPLASH_POTION : EntityType.LINGERING_POTION);
-
+				EntityType.SPLASH_POTION
+			);
+		}
+		else if (v1_9) {
+			entpotion = start.getKey().getWorld().spawnEntity(
+				start.getKey(),
+				potion.getType() == Material.SPLASH_POTION ? EntityType.SPLASH_POTION : LINGERING_POTION);
+		}
+		else {
+			entpotion = start.getKey().getWorld().spawnEntity(
+				start.getKey(),
+				EntityType.SPLASH_POTION
+			);
+		}
 		((ThrownPotion) entpotion).setShooter(getLivingEntity());
 		((ThrownPotion) entpotion).setItem(potion);
 		entpotion.setVelocity(guardian.fixForAcc(start.getValue()));
@@ -49,33 +83,47 @@ public class GuardianWeaponHelper extends GuardianHelperObject
 			return;
 		}
 		guardian.stats_arrowsFired++;
-		Entity arrow = start.getKey().getWorld().spawnEntity(
-			start.getKey(),
-			type.getType() == Material.SPECTRAL_ARROW ? EntityType.SPECTRAL_ARROW :
-			(type.getType() == Material.TIPPED_ARROW ? EntityType.TIPPED_ARROW : EntityType.ARROW)
-		);
-		((Projectile) arrow).setShooter(getLivingEntity());
+		Entity arrow;
 
-		if (arrow instanceof TippedArrow)
-		{
-			PotionData data = ((PotionMeta) type.getItemMeta()).getBasePotionData();
+		if (v1_9) {
 
-			//noinspection StatementWithEmptyBody
-			if (data.getType() == null || data.getType() == PotionType.UNCRAFTABLE) {
-				// TODO: Perhaps a **single** warning?
+			if (v1_14) {
+				Class toShoot;
+				toShoot = type.getType() == Material.SPECTRAL_ARROW ? SpectralArrow.class :
+							  (type.getType() == Material.TIPPED_ARROW ? TippedArrow.class : Arrow.class);
+				Vector dir = guardian.fixForAcc(start.getValue());
+				double length = Math.max(1.0, dir.length());
+				arrow = start.getKey().getWorld().spawnArrow(start.getKey(), dir.multiply(1.0 / length), (float) length, 0f, toShoot);
+				((Arrow) arrow).setPickupStatus(Arrow.PickupStatus.DISALLOWED);
 			}
-			else
-			{
-				((TippedArrow) arrow).setBasePotionData(data);
-
-				for (PotionEffect effect : ((PotionMeta) type.getItemMeta()).getCustomEffects())
-				{
-					((TippedArrow) arrow).addCustomEffect(effect, true);
+			else {
+				arrow = start.getKey().getWorld().spawnEntity(
+					start.getKey(),
+					type.getType() == Material.SPECTRAL_ARROW ? EntityType.SPECTRAL_ARROW :
+						(type.getType() == Material.TIPPED_ARROW ? TIPPED_ARROW : EntityType.ARROW)
+				);
+				arrow.setVelocity(guardian.fixForAcc(start.getValue()));
+			}
+			((Projectile) arrow).setShooter(getLivingEntity());
+			if (arrow instanceof TippedArrow && type instanceof PotionMeta) {
+				PotionData data = ((PotionMeta) type.getItemMeta()).getBasePotionData();
+				if (data.getType() == null || data.getType() == PotionType.UNCRAFTABLE) {
+					// TODO: Perhaps a **single** warning?
+				}
+				else {
+					((TippedArrow) arrow).setBasePotionData(data);
+					for (PotionEffect effect : ((PotionMeta) type.getItemMeta()).getCustomEffects()) {
+						((TippedArrow) arrow).addCustomEffect(effect, true);
+					}
 				}
 			}
 		}
+		else {
+			arrow = start.getKey().getWorld().spawnEntity(start.getKey(), EntityType.ARROW);
+			((Projectile) arrow).setShooter(getLivingEntity());
+			arrow.setVelocity(guardian.fixForAcc(start.getValue()));
+		}
 
-		arrow.setVelocity(guardian.fixForAcc(start.getValue()));
 		if (getNPC().getTrait(Inventory.class).getContents()[0].containsEnchantment(Enchantment.ARROW_FIRE))
 		{
 			arrow.setFireTicks(10000);
@@ -99,6 +147,26 @@ public class GuardianWeaponHelper extends GuardianHelperObject
 				target.clone().subtract(spawnAt).toVector().normalize().multiply(2.0)
 			)
 		); // TODO: Fiddle with '2.0'.
+	}
+
+	/**
+	 * Fires a trident from the NPC at a target.
+	 */
+	public void fireTrident(Location target) {
+		if (!v1_13) {
+			return;
+		}
+		guardian.swingWeapon();
+		guardian.stats_arrowsFired++;
+		guardian.faceLocation(target);
+		Vector forward = getLivingEntity().getEyeLocation().getDirection();
+		Location spawnAt = getLivingEntity().getEyeLocation().clone().add(forward.clone().multiply(guardian.firingMinimumRange() + 2));
+		Trident ent = (Trident) spawnAt.getWorld().spawnEntity(spawnAt, EntityType.TRIDENT);
+		if (v1_14) {
+			ent.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+		}
+		ent.setShooter(getLivingEntity());
+		ent.setVelocity(guardian.fixForAcc(target.clone().subtract(spawnAt).toVector().normalize().multiply(2.0))); // TODO: Fiddle with '2.0'.
 	}
 
 	/**
@@ -170,7 +238,7 @@ public class GuardianWeaponHelper extends GuardianHelperObject
 			entity.damage(guardian.getDamage() * (1.0 - guardian.getArmor(entity)));
 			knockback(entity);
 			if (!guardian.enemyDrops) {
-				guardian.needsDropsClear.put(entity.getUniqueId(), true);
+				guardian.needsDropsClear.add(entity.getUniqueId());
 			}
 		}
 		else {

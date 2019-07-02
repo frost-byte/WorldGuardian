@@ -12,7 +12,7 @@ public enum GuardianTargetType
 	OWNER(new EntityType[]{}, "OWNER"),
 	PLAYERS(new EntityType[]{EntityType.PLAYER}, "PLAYER"),
 	PIGS(new EntityType[]{EntityType.PIG}, "PIG"),
-	OCELOTS(new EntityType[]{EntityType.OCELOT}, "OCELOT", "CAT"),
+	OCELOTS(new EntityType[]{EntityType.OCELOT}, "OCELOT"),
 	COWS(new EntityType[]{EntityType.COW}, "COW"),
 	RABBITS(new EntityType[]{EntityType.RABBIT}, "RABBIT", "BUNNY", "BUNNIE"),
 	SHEEP(new EntityType[]{EntityType.SHEEP}, "SHEEP"),
@@ -117,8 +117,17 @@ public enum GuardianTargetType
 	PUFFERFISH(new EntityType[]{EntityType.PUFFERFISH}, "PUFFERFISH"),
 	TROPICAL_FISH(new EntityType[]{ EntityType.TROPICAL_FISH}, "TROPICAL_FISH", "TROPICALFISH"),
 	PHANTOM(new EntityType[]{EntityType.PHANTOM}, "PHANTOM"),
-	TURTLE(new EntityType[]{EntityType.TURTLE}, "TURTLE");
-	
+	TURTLE(new EntityType[]{EntityType.TURTLE}, "TURTLE"),
+
+	// 1.14
+	RAVAGERS(new EntityType[]{EntityType.RAVAGER}, "RAVAGER"),
+	PILLAGERS(new EntityType[]{EntityType.PILLAGER}, "PILLAGER"),
+	CATS(new EntityType[]{EntityType.CAT}, "CAT"),
+	PANDAS(new EntityType[]{EntityType.RAVAGER}, "PANDA"),
+	TRADER_LLAMAS(new EntityType[]{EntityType.TRADER_LLAMA}, "TRADER_LLAMA"),
+	WANDERING_TRADERS(new EntityType[]{EntityType.WANDERING_TRADER}, "WANDERING_TRADER"),
+	FOXES(new EntityType[]{EntityType.FOX}, "FOX");
+
 	private String[] names;
 	private EntityType[] entityTypes;
 

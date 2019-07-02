@@ -22,11 +22,12 @@ public final class GuardianTargetUtil
 	private static HashMap<String, GuardianTarget> targetOptions = new HashMap<>();
 	private static List<String> targetNames = new ArrayList<>();
 	private static WorldGuardianPlugin plugin;
-	public static final boolean v1_8, v1_9, v1_10, v1_11, v1_12, v1_13;
+	public static final boolean v1_8, v1_9, v1_10, v1_11, v1_12, v1_13, v1_14;
 
 	static {
 		String vers = Bukkit.getBukkitVersion(); // Returns in format like: 1.12.2-R0.1-SNAPSHOT
-		v1_13 = vers.startsWith("1.13");
+		v1_14 = vers.startsWith("1.14");
+		v1_13 = vers.startsWith("1.13") || v1_14;
 		v1_12 = vers.startsWith("1.12") || v1_13;
 		v1_11 = vers.startsWith("1.11") || v1_12;
 		v1_10 = vers.startsWith("1.10") || v1_11;
@@ -36,56 +37,56 @@ public final class GuardianTargetUtil
 
 	static
 	{
-		targetMap.put(GuardianTargetType.NPCS, new GuardianTarget(GuardianTargetType.NPCS));
-		targetMap.put(GuardianTargetType.OWNER, new GuardianTarget(GuardianTargetType.OWNER));
-		targetMap.put(GuardianTargetType.PLAYERS, new GuardianTarget(GuardianTargetType.PLAYERS));
-		targetMap.put(GuardianTargetType.PIGS, new GuardianTarget(GuardianTargetType.PIGS));
-		targetMap.put(GuardianTargetType.OCELOTS, new GuardianTarget(GuardianTargetType.OCELOTS));
-		targetMap.put(GuardianTargetType.COWS, new GuardianTarget(GuardianTargetType.COWS));
-		targetMap.put(GuardianTargetType.RABBITS, new GuardianTarget(GuardianTargetType.RABBITS));
-		targetMap.put(GuardianTargetType.SHEEP, new GuardianTarget(GuardianTargetType.SHEEP));
-		targetMap.put(GuardianTargetType.CHICKENS, new GuardianTarget(GuardianTargetType.CHICKENS));
-		targetMap.put(GuardianTargetType.HORSES, new GuardianTarget(GuardianTargetType.HORSES));
-		targetMap.put(GuardianTargetType.MUSHROOM_COW, new GuardianTarget(GuardianTargetType.MUSHROOM_COW));
-		targetMap.put(GuardianTargetType.IRON_GOLEMS, new GuardianTarget(GuardianTargetType.IRON_GOLEMS));
-		targetMap.put(GuardianTargetType.SQUIDS, new GuardianTarget(GuardianTargetType.SQUIDS));
-		targetMap.put(GuardianTargetType.VILLAGER, new GuardianTarget(GuardianTargetType.VILLAGER));
-		targetMap.put(GuardianTargetType.WOLF, new GuardianTarget(GuardianTargetType.WOLF));
-		targetMap.put(GuardianTargetType.SNOWMEN, new GuardianTarget(GuardianTargetType.SNOWMEN));
-		targetMap.put(GuardianTargetType.WITCH, new GuardianTarget(GuardianTargetType.WITCH));
-		targetMap.put(GuardianTargetType.GUARDIANS, new GuardianTarget(GuardianTargetType.GUARDIANS));
-		targetMap.put(GuardianTargetType.CREEPERS, new GuardianTarget(GuardianTargetType.CREEPERS));
-		targetMap.put(GuardianTargetType.SKELETONS, new GuardianTarget(GuardianTargetType.SKELETONS));
-		targetMap.put(GuardianTargetType.ZOMBIES, new GuardianTarget(GuardianTargetType.ZOMBIES));
-		targetMap.put(GuardianTargetType.MAGMA_CUBES, new GuardianTarget(GuardianTargetType.MAGMA_CUBES));
-		targetMap.put(GuardianTargetType.ZOMBIE_PIGMEN, new GuardianTarget(GuardianTargetType.ZOMBIE_PIGMEN));
-		targetMap.put(GuardianTargetType.SILVERFISH, new GuardianTarget(GuardianTargetType.SILVERFISH));
-		targetMap.put(GuardianTargetType.BATS, new GuardianTarget(GuardianTargetType.BATS));
-		targetMap.put(GuardianTargetType.BLAZES, new GuardianTarget(GuardianTargetType.BLAZES));
-		targetMap.put(GuardianTargetType.GHASTS, new GuardianTarget(GuardianTargetType.GHASTS));
-		targetMap.put(GuardianTargetType.GIANTS, new GuardianTarget(GuardianTargetType.GIANTS));
-		targetMap.put(GuardianTargetType.SLIME, new GuardianTarget(GuardianTargetType.SLIME));
-		targetMap.put(GuardianTargetType.SPIDER, new GuardianTarget(GuardianTargetType.SPIDER));
-		targetMap.put(GuardianTargetType.CAVE_SPIDERS, new GuardianTarget(GuardianTargetType.CAVE_SPIDERS));
-		targetMap.put(GuardianTargetType.ENDERMEN, new GuardianTarget(GuardianTargetType.ENDERMEN));
-		targetMap.put(GuardianTargetType.ENDERMITES, new GuardianTarget(GuardianTargetType.ENDERMITES));
-		targetMap.put(GuardianTargetType.WITHER, new GuardianTarget(GuardianTargetType.WITHER));
-		targetMap.put(GuardianTargetType.ENDERDRAGON, new GuardianTarget(GuardianTargetType.ENDERDRAGON));
+		targetMap.put(GuardianTargetType.NPCS, GuardianTarget.NPCS);
+		targetMap.put(GuardianTargetType.OWNER, GuardianTarget.OWNER);
+		targetMap.put(GuardianTargetType.PLAYERS, GuardianTarget.PLAYERS);
+		targetMap.put(GuardianTargetType.PIGS, GuardianTarget.PIGS);
+		targetMap.put(GuardianTargetType.OCELOTS, GuardianTarget.OCELOTS);
+		targetMap.put(GuardianTargetType.COWS, GuardianTarget.COWS);
+		targetMap.put(GuardianTargetType.RABBITS, GuardianTarget.RABBITS);
+		targetMap.put(GuardianTargetType.SHEEP, GuardianTarget.SHEEP);
+		targetMap.put(GuardianTargetType.CHICKENS, GuardianTarget.CHICKENS);
+		targetMap.put(GuardianTargetType.HORSES, GuardianTarget.HORSES);
+		targetMap.put(GuardianTargetType.MUSHROOM_COW, GuardianTarget.MUSHROOM_COW);
+		targetMap.put(GuardianTargetType.IRON_GOLEMS, GuardianTarget.IRON_GOLEMS);
+		targetMap.put(GuardianTargetType.SQUIDS, GuardianTarget.SQUIDS);
+		targetMap.put(GuardianTargetType.VILLAGER, GuardianTarget.VILLAGER);
+		targetMap.put(GuardianTargetType.WOLF, GuardianTarget.WOLF);
+		targetMap.put(GuardianTargetType.SNOWMEN, GuardianTarget.SNOWMEN);
+		targetMap.put(GuardianTargetType.WITCH, GuardianTarget.WITCH);
+		targetMap.put(GuardianTargetType.GUARDIANS, GuardianTarget.GUARDIANS);
+		targetMap.put(GuardianTargetType.CREEPERS, GuardianTarget.CREEPERS);
+		targetMap.put(GuardianTargetType.SKELETONS, GuardianTarget.SKELETONS);
+		targetMap.put(GuardianTargetType.ZOMBIES, GuardianTarget.ZOMBIES);
+		targetMap.put(GuardianTargetType.MAGMA_CUBES, GuardianTarget.MAGMA_CUBES);
+		targetMap.put(GuardianTargetType.ZOMBIE_PIGMEN, GuardianTarget.ZOMBIE_PIGMEN);
+		targetMap.put(GuardianTargetType.SILVERFISH, GuardianTarget.SILVERFISH);
+		targetMap.put(GuardianTargetType.BATS, GuardianTarget.BATS);
+		targetMap.put(GuardianTargetType.BLAZES, GuardianTarget.BLAZES);
+		targetMap.put(GuardianTargetType.GHASTS, GuardianTarget.GHASTS);
+		targetMap.put(GuardianTargetType.GIANTS, GuardianTarget.GIANTS);
+		targetMap.put(GuardianTargetType.SLIME, GuardianTarget.SLIME);
+		targetMap.put(GuardianTargetType.SPIDER, GuardianTarget.SPIDER);
+		targetMap.put(GuardianTargetType.CAVE_SPIDERS, GuardianTarget.CAVE_SPIDERS);
+		targetMap.put(GuardianTargetType.ENDERMEN, GuardianTarget.ENDERMEN);
+		targetMap.put(GuardianTargetType.ENDERMITES, GuardianTarget.ENDERMITES);
+		targetMap.put(GuardianTargetType.WITHER, GuardianTarget.WITHER);
+		targetMap.put(GuardianTargetType.ENDERDRAGON, GuardianTarget.ENDERDRAGON);
 
-		targetMap.put(GuardianTargetType.PASSIVE_MOB, new GuardianTarget(GuardianTargetType.PASSIVE_MOB));
-		targetMap.put(GuardianTargetType.MOBS, new GuardianTarget(GuardianTargetType.MOBS));
-		targetMap.put(GuardianTargetType.MONSTERS, new GuardianTarget(GuardianTargetType.MONSTERS));
-		targetMap.put(GuardianTargetType.SHULKERS, new GuardianTarget(GuardianTargetType.SHULKERS));
+		targetMap.put(GuardianTargetType.PASSIVE_MOB, GuardianTarget.PASSIVE_MOBS);
+		targetMap.put(GuardianTargetType.MOBS, GuardianTarget.MOBS);
+		targetMap.put(GuardianTargetType.MONSTERS, GuardianTarget.MONSTERS);
+		targetMap.put(GuardianTargetType.SHULKERS, GuardianTarget.SHULKERS);
 
 		// 1.13
-		targetMap.put(GuardianTargetType.DOLPHIN, new GuardianTarget(GuardianTargetType.DOLPHIN));
-		targetMap.put(GuardianTargetType.DROWNED, new GuardianTarget(GuardianTargetType.DROWNED));
-		targetMap.put(GuardianTargetType.COD, new GuardianTarget(GuardianTargetType.COD));
-		targetMap.put(GuardianTargetType.SALMON, new GuardianTarget(GuardianTargetType.SALMON));
-		targetMap.put(GuardianTargetType.PUFFERFISH, new GuardianTarget(GuardianTargetType.PUFFERFISH));
-		targetMap.put(GuardianTargetType.TROPICAL_FISH, new GuardianTarget(GuardianTargetType.TROPICAL_FISH));
-		targetMap.put(GuardianTargetType.PHANTOM, new GuardianTarget(GuardianTargetType.PHANTOM));
-		targetMap.put(GuardianTargetType.TURTLE, new GuardianTarget(GuardianTargetType.TURTLE));
+		targetMap.put(GuardianTargetType.DOLPHIN, GuardianTarget.DOLPHIN);
+		targetMap.put(GuardianTargetType.DROWNED, GuardianTarget.DROWNED);
+		targetMap.put(GuardianTargetType.COD, GuardianTarget.COD);
+		targetMap.put(GuardianTargetType.SALMON, GuardianTarget.SALMON);
+		targetMap.put(GuardianTargetType.PUFFERFISH, GuardianTarget.PUFFERFISH);
+		targetMap.put(GuardianTargetType.TROPICAL_FISH, GuardianTarget.TROPICAL_FISH);
+		targetMap.put(GuardianTargetType.PHANTOM, GuardianTarget.PHANTOM);
+		targetMap.put(GuardianTargetType.TURTLE, GuardianTarget.TURTLE);
 
 		for (EntityType entityType : EntityType.values())
 			entityToTargets.put(entityType, new HashSet<>());
@@ -121,7 +122,7 @@ public final class GuardianTargetUtil
 	}
 
 	public static GuardianTarget forName(String name) {
-		return targetOptions.get(name.toUpperCase());
+		return GuardianTarget.forName(name.toUpperCase());
 	}
 
 	public static GuardianTrait getGuardianFor(CommandSender sender) {
@@ -141,9 +142,10 @@ public final class GuardianTargetUtil
 	@SuppressWarnings("unused")
 	public static String getNameForType(GuardianTargetType targetType)
 	{
-		return targetMap.containsKey(targetType) ? targetMap.get(targetType).getName() : "";
+		return targetMap.containsKey(targetType) ? targetMap.get(targetType).name() : "";
 	}
 
+	@SuppressWarnings("unused")
 	public static void addTargetOption(String name, GuardianTarget guardianTarget)
 	{
 		name = Preconditions.checkNotNull(name, "The target name cannot be null");
@@ -157,6 +159,7 @@ public final class GuardianTargetUtil
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static void addTypeMapping(EntityType entityType, GuardianTarget guardianTarget)
 	{
 		entityType = Preconditions.checkNotNull(entityType, "The entity type cannot be null");
@@ -177,7 +180,7 @@ public final class GuardianTargetUtil
 				targets.substring(0, targets.length() - 2) : targets.toString();
 	}
 
-	public static String getTargetString(HashSet<String> guardian) {
+	public static String getTargetString(ArrayList<String> guardian) {
 		StringBuilder targets = new StringBuilder();
 
 		for (String target : guardian) {
@@ -195,16 +198,17 @@ public final class GuardianTargetUtil
 		}
 
 		OfflinePlayer player = Bukkit.getOfflinePlayer(
-				npc.getTrait(Owner.class).getOwnerId()
+			npc.getTrait(Owner.class).getOwnerId()
 		);
 
-		if (player == null) {
-			return "Server/Unknown";
-		}
+//		if (player == null) {
+//			return "Server/Unknown";
+//		}
 
 		return player.getName();
 	}
 
+	@SuppressWarnings("unused")
 	public static HashSet<GuardianTarget> findTargetByEntityType(EntityType entityType)
 	{
 		entityType = Preconditions.checkNotNull(entityType, "The entity type cannot be null");

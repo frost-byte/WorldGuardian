@@ -10,27 +10,24 @@ public class GuardianSBTeams extends GuardianIntegration
 {
 	@Override
 	public String getTargetHelp() {
-		return "sbteam SCOREBOARD_TEAM_NAME";
+		return "sbteam:SCOREBOARD_TEAM_NAME";
 	}
 
 	@Override
-	public boolean isTarget(LivingEntity ent, String... options) {
-		if(
-			options.length != 2 ||
-			!(ent instanceof  Player) ||
-			!options[0].equalsIgnoreCase("sbteam")
-		){
-			return false;
-		}
+	public String[] getTargetPrefixes()
+	{
+		return new String[] { "sbteam" };
+	}
 
-		try
-		{
-			String sbteamName = options[1];
-			Team t = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(sbteamName);
-
-			if (t != null) {
-				if (t.hasEntry(ent.getName())) {
-					return true;
+	@Override
+	public boolean isTarget(LivingEntity ent, String prefix, String value) {
+		try {
+			if (prefix.equals("sbteam") && ent instanceof Player) {
+				Team t = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(value);
+				if (t != null) {
+					if (t.hasEntry(((Player) ent).getName())) {
+						return true;
+					}
 				}
 			}
 		}

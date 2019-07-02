@@ -8,15 +8,26 @@ public class GuardianPermissions extends GuardianIntegration
 {
 	@Override
 	public String getTargetHelp() {
-		return "permission PERM.KEY";
+		return "permission:PERM.KEY";
 	}
 
 	@Override
-	public boolean isTarget(LivingEntity ent, String... options)
+	public String[] getTargetPrefixes()
 	{
-		return options.length == 2 &&
-			ent instanceof Player &&
-			options[0].equalsIgnoreCase("permission") &&
-			ent.hasPermission(options[1]);
+		return new String[] { "permission" };
+	}
+
+	@Override
+	public boolean isTarget(LivingEntity livingEntity, String prefix, String value)
+	{
+		if (!(livingEntity instanceof Player)) {
+			return false;
+		}
+		if (prefix.equals("permission")) {
+			if (livingEntity.hasPermission(value)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

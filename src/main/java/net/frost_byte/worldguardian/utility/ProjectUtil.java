@@ -1,31 +1,47 @@
 package net.frost_byte.worldguardian.utility;
 
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public final class ProjectUtil
 {
 	private ProjectUtil() {}
 
 	public static String getBranchAndID() {
-		JSONObject jsonObject = (JSONObject) JSONValue.parse(readGitProperties());
+		JsonObject jsonObject = new JsonParser().parse(readGitProperties()).getAsJsonObject();
+		String branch = "";
+		String commitId = "";
 		String result = "";
 
 		if (jsonObject != null)
 		{
-			if (jsonObject.containsKey("git.branch"))
-				result += "branch: " + jsonObject.get("git.branch");
+			if (jsonObject.has("git")) {
+				JsonObject gitObject = (JsonObject) jsonObject.get("git");
 
-			if (jsonObject.containsKey("git.commit.id.abbrev"))
-				result += " commit id: " + jsonObject.get("git.commit.id.abbrev");
+				try {
+					branch = gitObject.get("branch").getAsString();
+					commitId = gitObject.get("commit").getAsJsonObject().get("id").getAsJsonObject().get("abbrev").getAsString();
+//					if (gitObject.has("commit")) {
+//						JsonObject commitObject = (JsonObject) gitObject.get("commit");
+//						if (commitObject.has("id")) {
+//							JsonObject idObject = (JsonObject) commitObject.get("id");
+//							if(idObject.has("abbrev")) {
+//								result += " commit id: " + idObject.get("abbrev");
+//							}
+//						}
+//					}
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 		}
-
-		return result;
+		return "branch: " + branch + "; commit id: " + commitId;
 	}
 
 	public static String readGitProperties() {

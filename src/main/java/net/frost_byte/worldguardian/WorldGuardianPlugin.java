@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 
 import me.lucko.luckperms.api.LuckPermsApi;
 import net.citizensnpcs.api.CitizensAPI;
+
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.trait.TraitInfo;
 
@@ -13,6 +14,9 @@ import net.frost_byte.worldguardian.integration.GuardianHealth;
 import net.frost_byte.worldguardian.integration.GuardianPermissions;
 import net.frost_byte.worldguardian.integration.GuardianSBTeams;
 import net.frost_byte.worldguardian.integration.GuardianSquads;
+import net.frost_byte.worldguardian.targeting.GuardianTarget;
+import net.frost_byte.worldguardian.utility.ConfigUpdater;
+import net.frost_byte.worldguardian.utility.GuardianUtilities;
 import net.frost_byte.worldguardian.utility.ProjectUtil;
 
 import org.bukkit.Bukkit;
@@ -21,13 +25,19 @@ import org.bukkit.ChatColor;
 import com.github.games647.tabchannels.TabChannelsManager;
 
 import org.bukkit.Sound;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.util.*;
 
 import static net.md_5.bungee.api.chat.TextComponent.fromLegacyText;
@@ -57,6 +67,21 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 	public static final String prefixGood = ChatColor.DARK_GREEN + "[Guardian] " + ColorBasic;
 
 	public static final String prefixBad = ChatColor.DARK_GREEN + "[Guardian] " + ChatColor.RED;
+
+	/**
+	 * A map of typeable target names to valid targets.
+	 */
+	public static HashMap<String, GuardianTarget> targetOptions = new HashMap<>();
+
+	/**
+	 * A map of entity types to target types.
+	 */
+	public static HashMap<EntityType, HashSet<GuardianTarget>> entityToTargets = new HashMap<>();
+
+	/**
+	 * A map of target prefixes to the integration object.
+	 */
+	public final static HashMap<String, GuardianIntegration> integrationPrefixMap = new HashMap<>();
 
 	/**
 	 * Configuration option: maximum health value any NPC can ever have.
@@ -134,6 +159,16 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 	public int tickRate = 10;
 
 	/**
+	 * Configuration option: time to keep running away for.
+	 */
+	public int runAwayTime;
+
+	/**
+	 * Configuration option: whether block players from damaging their own guards.
+	 */
+	public boolean noGuardDamage;
+
+	/**
 	 * Whether debugging is enabled.
 	 */
 	public static boolean debugMe = false;
@@ -144,6 +179,16 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 	public final static List<GuardianIntegration> integrations = new ArrayList<>();
 
 	/**
+	 * A list of all currently spawned Sentinel NPCs.
+	 */
+	public ArrayList<GuardianTrait> currentGuardianNPCs = new ArrayList<>();
+
+	/**
+	 * Permissions handler.
+	 */
+	public Permission vaultPerms;
+
+	/**
 	 * Expected configuration file version.
 	 */
 	public final static int CONFIG_VERSION = 9;
@@ -152,6 +197,22 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 	 * Prefix string for an inventory title.
 	 */
 	public final static String InvPrefix = ChatColor.GREEN + "Guardian ";
+
+	static {
+		for (EntityType type : EntityType.values()) {
+			entityToTargets.put(type, new HashSet<>());
+		}
+	}
+
+	/**
+	 * Registers a new integration to Sentinel.
+	 */
+	public void registerIntegration(GuardianIntegration integration) {
+		integrations.add(integration);
+		for (String prefix : integration.getTargetPrefixes()) {
+			integrationPrefixMap.put(prefix, integration);
+		}
+	}
 
 	/**
 	 * Perform Plugin initialization before it is
@@ -242,17 +303,57 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 		// Inject all class members annotated with Inject
 		injector.injectMembers(this);
 
-
 		CitizensAPI.getTraitFactory().registerTrait(TraitInfo.create(GuardianTrait.class).withName("guardian"));
-		loadConfig();
+		saveDefaultConfig();
+		try {
+			// Automatic config file update
+			InputStream properConfig = WorldGuardianPlugin.class.getResourceAsStream("/config.yml");
+			String properConfigString = GuardianUtilities.streamToString(properConfig);
+			properConfig.close();
+			FileInputStream currentConfig = new FileInputStream(getDataFolder() + "/config.yml");
+			String currentConfigString = GuardianUtilities.streamToString(currentConfig);
+			currentConfig.close();
+			String updated = ConfigUpdater.updateConfig(currentConfigString, properConfigString);
+			if (updated != null) {
+				getLogger().info("Your config file is outdated. Automatically updating it...");
+				FileOutputStream configOutput = new FileOutputStream(getDataFolder() + "/config.yml");
+				OutputStreamWriter writer = new OutputStreamWriter(configOutput);
+				writer.write(updated);
+				writer.close();
+				configOutput.close();
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 
+		loadConfigSettings();
+		BukkitRunnable postLoad = new BukkitRunnable() {
+			@Override
+			public void run() {
+				for (NPC npc : CitizensAPI.getNPCRegistry()) {
+					if (!npc.isSpawned() && npc.hasTrait(GuardianTrait.class)) {
+						GuardianTrait guardian = npc.getTrait(GuardianTrait.class);
+						if (guardian.respawnTime > 0) {
+							if (guardian.spawnPoint == null && npc.getStoredLocation() == null) {
+								getLogger().warning("NPC " + npc.getId() + " has a null spawn point and can't be spawned. Perhaps the world was deleted?");
+								continue;
+							}
+							npc.spawn(guardian.spawnPoint == null ? npc.getStoredLocation() : guardian.spawnPoint);
+						}
+					}
+				}
+			}
+		};
+		postLoad.runTaskLater(this, 40);
 		getLogger().info("Guardian loaded!");
 		getServer().getPluginManager().registerEvents(this, this);
 
-		integrations.add(new GuardianHealth());
-		integrations.add(new GuardianPermissions());
-		integrations.add(new GuardianSBTeams());
-		integrations.add(new GuardianSquads());
+
+		registerIntegration(new GuardianHealth());
+		registerIntegration(new GuardianPermissions());
+		registerIntegration(new GuardianSBTeams());
+		registerIntegration(new GuardianSquads());
 
 		// Configurations
 		registerConfigs();
@@ -276,12 +377,9 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 	/**
 	 * Load the Configuration for the Plugin
 	 */
-	private void loadConfig()
+	private void loadConfigSettings()
 	{
-		saveDefaultConfig();
-		if (getConfig().getInt("config version", 0) != CONFIG_VERSION) {
-			getLogger().warning("Outdated Guardian config - please delete it to regenerate it!");
-		}
+		reloadConfig();
 		cleverTicks = getConfig().getInt("random.clever ticks", 10);
 		canUseSkull = getConfig().getBoolean("random.skull allowed", true);
 		blockEvents = getConfig().getBoolean("random.workaround bukkit events", false);
@@ -302,35 +400,12 @@ public class WorldGuardianPlugin extends JavaPlugin implements Listener
 		guardDistanceSelectionRange = getConfig().getInt("random.guard follow distance.margin", 2);
 		workaroundEntityChasePathfinder = getConfig().getBoolean("random.workaround entity chase pathfinder", false);
 		protectFromIgnores = getConfig().getBoolean("random.protected", false);
-		BukkitRunnable postLoad = new BukkitRunnable() {
-
-			@Override
-			public void run() {
-			for (NPC npc : CitizensAPI.getNPCRegistry())
-			{
-				if (!npc.isSpawned() && npc.hasTrait(GuardianTrait.class))
-				{
-					GuardianTrait guardian = npc.getTrait(GuardianTrait.class);
-					if (guardian.respawnTime > 0)
-					{
-						if (guardian.spawnPoint == null && npc.getStoredLocation() == null)
-						{
-							getLogger().warning(
-								"NPC " + npc.getId() + " has a null spawn point and can't be spawned. "+
-								"Perhaps the world was deleted?"
-							);
-							continue;
-						}
-						npc.spawn(guardian.spawnPoint == null ? npc.getStoredLocation() : guardian.spawnPoint);
-					}
-				}
-			}
-			}
-		};
-		postLoad.runTaskLater(this, 40);
+		runAwayTime = getConfig().getInt("random.run away time");
 		maxHealth = getConfig().getDouble("random.max health", 2000);
+		noGuardDamage = getConfig().getBoolean("random.no guard damage", true);
 		tickRate = getConfig().getInt("update rate", 10);
 	}
+
 	/**
 	 * Register all Managers and classes that will process Events
 	 * triggered by Bukkit or by the plugin

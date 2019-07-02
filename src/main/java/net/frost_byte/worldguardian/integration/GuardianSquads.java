@@ -12,34 +12,26 @@ public class GuardianSquads extends GuardianIntegration
 {
 	@Override
 	public String getTargetHelp() {
-		return "squad GUARDIAN_SQUAD_NAME";
+		return "squad:GUARDIAN_SQUAD_NAME";
+	}
+
+	@Override public String[] getTargetPrefixes()
+	{
+		return new String[] { "squad" };
 	}
 
 	@Override
-	public boolean isTarget(LivingEntity ent, String... options) {
-		if(
-			options.length != 2 ||
-			!(ent instanceof Player) ||
-			!options[0].equalsIgnoreCase("squad")
-		){
-			return false;
-		}
-
+	public boolean isTarget(LivingEntity livingEntity, String prefix, String value)
+	{
 		try {
 			if (
-				CitizensAPI.getNPCRegistry().isNPC(ent) &&
-				CitizensAPI.getNPCRegistry()
-					.getNPC(ent)
-					.hasTrait(GuardianTrait.class)
-			){
-				GuardianTrait guardian = CitizensAPI.getNPCRegistry()
-					.getNPC(ent)
-					.getTrait(GuardianTrait.class);
+				prefix.equals("squad") && CitizensAPI.getNPCRegistry().isNPC(livingEntity) &&
+				CitizensAPI.getNPCRegistry().getNPC(livingEntity).hasTrait(GuardianTrait.class)
+			) {
+				GuardianTrait guardian = CitizensAPI.getNPCRegistry().getNPC(livingEntity).getTrait(GuardianTrait.class);
 
-				if (guardian.squad != null)
-				{
-					String squadName = options[1].toLowerCase(Locale.ENGLISH);
-
+				if (guardian.squad != null) {
+					String squadName = value.toLowerCase(Locale.ENGLISH);
 					if (squadName.equals(guardian.squad)) {
 						return true;
 					}

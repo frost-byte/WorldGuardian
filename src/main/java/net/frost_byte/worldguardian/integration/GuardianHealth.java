@@ -9,31 +9,29 @@ public class GuardianHealth extends GuardianIntegration
 	@Override
 	public String getTargetHelp()
 	{
-		return "healthabove PERCENTAGE, healthbelow PERCENTAGE";
+		return "healthabove:PERCENTAGE, healthbelow:PERCENTAGE";
 	}
 
 	@Override
-	public boolean isTarget(LivingEntity ent, String... options) {
-		if (options.length != 2)
-			return false;
+	public String[] getTargetPrefixes()
+	{
+		return new String[] { "healthabove", "healthbelow" };
+	}
 
+	@Override public boolean isTarget(LivingEntity livingEntity, String prefix, String value)
+	{
 		try {
-			String haText = options[1];
-			double haVal = Double.parseDouble(haText);
-			double maxHealth = ent.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue();
-
-			switch(options[0])
-			{
-				case "healthabove":
-					if (ent.getHealth() / maxHealth > haVal * 0.01) {
-						return true;
-					}
-					break;
-				case "healthbelow":
-					if (ent.getHealth() / maxHealth < haVal * 0.01) {
-						return true;
-					}
-					break;
+			if (prefix.equals("healthabove")) {
+				double haVal = Double.parseDouble(value);
+				if (livingEntity.getHealth() / livingEntity.getMaxHealth() > haVal * 0.01) {
+					return true;
+				}
+			}
+			else if (prefix.equals("healthbelow")) {
+				double haVal = Double.parseDouble(value);
+				if (livingEntity.getHealth() / livingEntity.getMaxHealth() < haVal * 0.01) {
+					return true;
+				}
 			}
 		}
 		catch (NumberFormatException ex) {

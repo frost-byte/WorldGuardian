@@ -100,6 +100,7 @@ public class GuardianCommand extends BaseCommand
 			prefixGood + "Group Targets: " + AQUA + getNameTargetString(guardian.allTargets.byGroup),
 			prefixGood + "Event Targets: " + AQUA + getNameTargetString(guardian.allTargets.byEvent),
 			prefixGood + "Other Targets: " + AQUA + getNameTargetString(guardian.allTargets.byOther),
+			prefixGood + "Avoid Targets: " + AQUA + getNameTargetString(guardian.allAvoids.targets),
 			prefixGood + "Ignored Targets: " + AQUA + getTargetString(guardian.allIgnores.targets),
 			prefixGood + "Ignored Player Name Targets: " + AQUA + getNameTargetString(guardian.allIgnores.byPlayerName),
 			prefixGood + "Ignored NPC Name Targets: " + AQUA + getNameTargetString(guardian.allIgnores.byNpcName),

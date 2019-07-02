@@ -62,12 +62,41 @@ public class GuardianAttackHelper extends GuardianHelperObject
 	/**
 	 * Causes the NPC to attempt an attack on a target.
 	 */
-	public void tryAttack(LivingEntity entity) {
+	public boolean tryAttack(LivingEntity target)
+	{
+		if (tryAttackInternal(target)) {
+			return true;
+		}
+		LivingEntity quickTarget = targetingHelper.findQuickMeleeTarget();
+		if (quickTarget != null) {
+			if (itemHelper.isRanged()) {
+				if (!guardian.autoswitch) {
+					return false;
+				}
+				itemHelper.swapToMelee();
+				if (itemHelper.isRanged()) {
+					return false;
+				}
+			}
+			if (tryAttackInternal(quickTarget)) {
+				chase(target);
+				return true;
+			}
+			chase(target);
+		}
+		return false;
+	}
+
+	/**
+	 * Internal attack attempt logic.
+	 */
+	public boolean tryAttackInternal(LivingEntity entity) {
+
 		if (!entity.getWorld().equals(getLivingEntity().getWorld())) {
-			return;
+			return false;
 		}
 		if (!getLivingEntity().hasLineOfSight(entity)) {
-			return;
+			return false;
 		}
 		// TODO: Simplify this code!
 		guardian.stats_attackAttempts++;
@@ -88,12 +117,12 @@ public class GuardianAttackHelper extends GuardianHelperObject
 			if (debugMe) {
 				debug("tryAttack refused, event cancellation");
 			}
-			return;
+			return false;
 		}
 		targetingHelper.addTarget(entity.getUniqueId());
 		for (GuardianIntegration si : WorldGuardianPlugin.integrations) {
 			if (si.tryAttack(guardian, entity)) {
-				return;
+				return true;
 			}
 		}
 		if (itemHelper.usesBow()) {
@@ -102,7 +131,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					if (guardian.rangedChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				ItemStack item = itemHelper.getArrow();
@@ -125,7 +154,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					if (guardian.rangedChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				ItemStack item = itemHelper.getArrow();
@@ -141,13 +170,34 @@ public class GuardianAttackHelper extends GuardianHelperObject
 				chase(entity);
 			}
 		}
+		else if (itemHelper.usesTrident()) {
+			if (targetingHelper.canSee(entity)) {
+				if (guardian.timeSinceAttack < guardian.attackRateRanged) {
+					if (guardian.rangedChase) {
+						rechase();
+					}
+					return false;
+				}
+				guardian.timeSinceAttack = 0;
+				weaponHelper.fireTrident(entity.getEyeLocation());
+				if (guardian.needsAmmo) {
+					itemHelper.takeOne();
+					itemHelper.grabNextItem();
+				}
+				return true;
+			}
+			else if (guardian.rangedChase) {
+				chase(entity);
+				return false;
+			}
+		}
 		else if (itemHelper.usesPotion()) {
 			if (targetingHelper.canSee(entity)) {
 				if (guardian.timeSinceAttack < guardian.attackRateRanged) {
 					if (guardian.rangedChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				weaponHelper.firePotion(
@@ -170,7 +220,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					if (guardian.rangedChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				weaponHelper.fireEgg(entity.getEyeLocation());
@@ -178,9 +228,11 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					itemHelper.takeOne();
 					itemHelper.grabNextItem();
 				}
+				return true;
 			}
 			else if (guardian.rangedChase) {
 				chase(entity);
+				return false;
 			}
 		}
 		else if (itemHelper.usesPearl()) {
@@ -189,7 +241,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					if (guardian.rangedChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				weaponHelper.firePearl(entity);
@@ -197,9 +249,11 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					itemHelper.takeOne();
 					itemHelper.grabNextItem();
 				}
+				return true;
 			}
 			else if (guardian.rangedChase) {
 				chase(entity);
+				return false;
 			}
 		}
 		else if (itemHelper.usesWitherSkull()) {
@@ -208,7 +262,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					if (guardian.rangedChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				weaponHelper.fireSkull(entity.getEyeLocation());
@@ -216,9 +270,11 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					itemHelper.takeOne();
 					itemHelper.grabNextItem();
 				}
+				return true;
 			}
 			else if (guardian.rangedChase) {
 				chase(entity);
+				return false;
 			}
 		}
 		else if (itemHelper.usesFireball()) {
@@ -227,7 +283,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					if (guardian.rangedChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				weaponHelper.fireFireball(entity.getEyeLocation());
@@ -235,9 +291,11 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					itemHelper.takeOne();
 					itemHelper.grabNextItem();
 				}
+				return true;
 			}
 			else if (guardian.rangedChase) {
 				chase(entity);
+				return false;
 			}
 		}
 		else if (itemHelper.usesLightning()) {
@@ -246,7 +304,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					if (guardian.rangedChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				guardian.swingWeapon();
@@ -259,6 +317,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					itemHelper.takeOne();
 					itemHelper.grabNextItem();
 				}
+				return true;
 			}
 			else if (guardian.rangedChase) {
 				chase(entity);
@@ -270,7 +329,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					if (guardian.rangedChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				if (!entity.isGlowing()) {
@@ -289,10 +348,12 @@ public class GuardianAttackHelper extends GuardianHelperObject
 						itemHelper.takeOne();
 						itemHelper.grabNextItem();
 					}
+					return true;
 				}
 			}
 			else if (guardian.rangedChase) {
 				chase(entity);
+				return false;
 			}
 		}
 		else {
@@ -304,7 +365,7 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					if (guardian.closeChase) {
 						rechase();
 					}
-					return;
+					return false;
 				}
 				guardian.timeSinceAttack = 0;
 				// TODO: Damage sword if needed!
@@ -316,13 +377,16 @@ public class GuardianAttackHelper extends GuardianHelperObject
 					itemHelper.reduceDurability();
 					itemHelper.grabNextItem();
 				}
+				return true;
 			}
 			else if (guardian.closeChase) {
 				if (debugMe) {
 					debug("tryAttack refused, range");
 				}
 				chase(entity);
+				return false;
 			}
 		}
+		return false;
 	}
 }

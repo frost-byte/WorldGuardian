@@ -40,8 +40,7 @@ public class GuardianWorldCommand extends BaseCommand
 		}
 		else if (location != null)
 		{
-			guardian.destinationLocation = location;
-			guardian.destinationWorld = location.getWorld().getName();
+			guardian.spawnPoint = location;
 			plugin.sendChannelMessage(sender, prefixGood + "Spawn point updated using location!");
 		}
 		else {

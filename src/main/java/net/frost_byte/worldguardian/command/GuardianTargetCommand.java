@@ -34,7 +34,7 @@ public class GuardianTargetCommand extends BaseCommand
 	{
 		GuardianTrait guardian = getGuardianFor(sender);
 
-		if (guardian != null && guardian.allTargets.targets.add(target.getName()))
+		if (guardian != null && guardian.allTargets.targets.add(target.name()))
 		{
 			plugin.sendChannelMessage(sender, prefixGood + "Target added!");
 		}
@@ -75,7 +75,7 @@ public class GuardianTargetCommand extends BaseCommand
 			return;
 		}
 
-		if (!guardian.allTargets.targets.remove(target.getName()))
+		if (!guardian.allTargets.targets.remove(target.name()))
 		{
 			plugin.sendChannelMessage(sender, 
 				prefixBad +
@@ -129,7 +129,7 @@ public class GuardianTargetCommand extends BaseCommand
 			return;
 		}
 
-		if (guardian.allIgnores.targets.add(target.getName()))
+		if (guardian.allIgnores.targets.add(target.name()))
 		{
 			plugin.sendChannelMessage(sender, 
 				prefixGood +
@@ -187,7 +187,7 @@ public class GuardianTargetCommand extends BaseCommand
 			return;
 		}
 
-		if (!guardian.allIgnores.targets.remove(target.getName()))
+		if (!guardian.allIgnores.targets.remove(target.name()))
 		{
 			plugin.sendChannelMessage(sender, 
 				prefixBad +

@@ -95,6 +95,19 @@ public class GuardianUtilities
 	}
 
 	/**
+	 * Returns the string of a regex that matches the name (if any).
+	 */
+	public static String getRegexTarget(String name, List<String> regexes) {
+		for (String str : regexes) {
+			Pattern pattern = regexFor(".*" + str + ".*");
+			if (pattern.matcher(name).matches()) {
+				return str;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Returns whether a list of regex values match the a string.
 	 */
 	public static boolean isRegexTargeted(String name, List<String> regexes) {
